@@ -1251,6 +1251,19 @@ a:hover {
   font-size: 13px;
   color: var(--mute);
 }
+.result-detail summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 13px;
+  padding: 4px 0;
+}
+.coworker-reply {
+  padding: 12px;
+  margin: 12px 0;
+  background: #fff;
+  line-height: 1.6;
+}
+.coworker-reply p:last-child { margin-bottom: 0; }
 .txn {
   background: var(--accent) !important;
   color: var(--ink);

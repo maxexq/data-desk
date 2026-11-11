@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { STORAGE_KEY } from '../config';
-import { checkResult, describeWorkspace, judge, resetWorkspace, type Report, type TableInfo } from '../lib/judge';
+import { inspectResult, describeWorkspace, judge, resetWorkspace, type Report, type TableInfo } from '../lib/judge';
 import { execSql, explainError, inTransaction, lastRows, type Cell, type ExecOutcome } from '../lib/pg';
 import { TICKETS, getTicket } from '../tickets';
 import { todayKey } from '../tickets/daily';
@@ -210,7 +210,7 @@ export const useGame = create<GameState>()(
           const s0 = get();
           const sql = t && s0.tabsets[t.id]?.tabs.find((x) => x.id === tabId)?.sql.trim();
           if (!t || !sql || s0.running || !s0.ready) return;
-          set({ running: true });
+          set({ running: true, report: null });
           const out = await execSql(sql);
           const view = toView(out);
           const rows = (out.ok && lastRows(out.results)) || { columns: [] as string[], values: [] as Cell[][] };
@@ -222,7 +222,11 @@ export const useGame = create<GameState>()(
             history: [sql, ...s.history.filter((q) => q !== sql)].slice(0, 40),
           }));
           const task = t.tasks[p.task];
-          if (out.ok && !p.done && task?.check.kind === 'result' && (await checkResult(task.check, rows))) advance(t);
+          if (out.ok && !p.done && task?.check.kind === 'result') {
+            const report = await inspectResult(task.check, rows);
+            set({ report: { ...report, taskLabel: `ขั้นที่ ${p.task + 1}: ${task.goal}` } });
+            if (report.pass) advance(t);
+          }
           await refresh();
         }),
 

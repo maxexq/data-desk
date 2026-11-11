@@ -32,7 +32,7 @@ ANALYZE orders;
     {
       goal: 'ดูก่อนว่าฐานข้อมูลทำงานอย่างไร: รัน EXPLAIN ของ query ในโจทย์',
       skill: 'EXPLAIN',
-      check: { kind: 'result', test: (r) => r.columns[0] === 'QUERY PLAN' && r.values.some((row) => String(row[0]).includes('orders')) },
+      check: { kind: 'result', test: (r) => r.columns[0] === 'QUERY PLAN' && r.values.some((row) => String(row[0]).includes('orders')), feedback: 'ขั้นนี้ต้องการแผนการทำงาน ไม่ใช่รายการออเดอร์ ลองใช้ EXPLAIN นำหน้า query ที่ให้ไว้ในโจทย์' },
       hints: [
         'EXPLAIN ไม่ได้รัน query จริง แต่แสดงแผนที่ฐานข้อมูลเลือก (manual บทที่ 11)',
         'พิมพ์คำว่า EXPLAIN นำหน้า query เดิมทั้งก้อน',
@@ -57,4 +57,8 @@ ANALYZE orders;
     'index มีราคา: ทุก INSERT และ UPDATE ต้องปรับ index ด้วย จึงสร้างเฉพาะที่มี query ใช้จริง และบนตารางเล็กฐานข้อมูลอาจเลือกอ่านทั้งตารางต่อไปเพราะเร็วกว่า',
     'บนระบบจริงที่มีคนใช้อยู่ CREATE INDEX แบบปกติจะกันการเขียนตารางระหว่างสร้าง ทีมส่วนใหญ่จึงใช้ CREATE INDEX CONCURRENTLY ซึ่งต้องรันนอก transaction',
   ],
+  reply: { from: 'Krit · CTO', body: [
+    'แผนการทำงานผ่านแล้ว ขอบคุณที่แก้ตรงการเข้าถึงข้อมูลโดยไม่ต้องเปลี่ยน query ในแอป',
+    'จากไล่บันทึกประตูวันแรก ถึงออกแบบตาราง ย้ายข้อมูล และดูแลประสิทธิภาพ คุณปิดงานหลักชุดนี้ครบแล้ว แวะรับงานประจำวัน หรือทดลองกับข้อมูลใน Sandbox ต่อได้เลย',
+  ] },
 };

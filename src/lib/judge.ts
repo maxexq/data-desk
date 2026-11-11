@@ -12,6 +12,8 @@ export interface ReportLine {
 export interface Report {
   pass: boolean;
   lines: ReportLine[];
+  taskLabel?: string;
+  expandable?: boolean;
 }
 
 const WS = 'ws'; // the player's workspace schema
@@ -57,11 +59,30 @@ export function sameRows(a: Cell[][], b: Cell[][], ordered = false): boolean {
 
 /** Result checks run on every query. `rows` is the player's last result (possibly empty). */
 export async function checkResult(check: Extract<Check, { kind: 'result' }>, rows: Rows): Promise<boolean> {
-  if ('test' in check) return check.test(rows);
+  return (await inspectResult(check, rows)).pass;
+}
+
+/** Diagnose the result without revealing the reference rows or SQL. */
+export async function inspectResult(check: Extract<Check, { kind: 'result' }>, rows: Rows): Promise<Report> {
+  const report = (pass: boolean, name: string, detail?: string): Report => ({
+    pass, expandable: true, lines: [{ ok: pass, name, detail }],
+  });
+  if ('test' in check) return check.test(rows)
+    ? report(true, 'ผลลัพธ์ตรงตามโจทย์แล้ว')
+    : report(false, 'รันสำเร็จ แต่ผลลัพธ์ยังไม่ตรงเงื่อนไขของขั้นนี้', check.feedback ?? 'ลองเทียบผลลัพธ์กับสิ่งที่โจทย์ขอ หรือเปิด Hint เพื่อดูแนวทางของขั้นนี้');
   const ref = await execSql(check.expect);
-  if (!ref.ok) return false;
+  if (!ref.ok) return report(false, 'ยังตรวจคำตอบไม่ได้', 'ตัวตรวจอ่านข้อมูลอ้างอิงไม่สำเร็จ ลองตรวจ transaction ที่ค้างอยู่ หรือ Reset data แล้วรันใหม่');
   const want = lastRows(ref.results);
-  return !!want && sameRows(rows.values, want.values, check.ordered);
+  if (!want) return report(false, 'ยังตรวจคำตอบไม่ได้');
+  if (rows.columns.length !== want.columns.length)
+    return report(false, 'จำนวนคอลัมน์ยังไม่ตรง', `ได้ ${rows.columns.length} คอลัมน์ โจทย์ต้องการ ${want.columns.length} คอลัมน์ ลองตรวจรายการใน SELECT และลำดับคอลัมน์`);
+  if (sameRows(rows.values, want.values, check.ordered)) return report(true, 'ผลลัพธ์ตรงตามโจทย์แล้ว');
+  if (rows.values.length !== want.values.length)
+    return report(false, rows.values.length > want.values.length ? 'จำนวนแถวยังเกินจากที่โจทย์ต้องการ' : 'จำนวนแถวยังขาดจากที่โจทย์ต้องการ',
+      `ได้ ${rows.values.length} แถว โจทย์ต้องการ ${want.values.length} แถว ลองตรวจ WHERE, JOIN และการจัดกลุ่ม รวมถึงแถวซ้ำ`);
+  if (check.ordered && sameRows(rows.values, want.values))
+    return report(false, 'ข้อมูลครบแล้ว แต่ลำดับแถวยังไม่ตรง', 'ลองตรวจ ORDER BY, ASC / DESC และเงื่อนไขเรียงเมื่อค่าเท่ากัน');
+  return report(false, 'จำนวนแถวและคอลัมน์ตรงแล้ว แต่ค่ายังไม่ตรง', 'ลองตรวจลำดับคอลัมน์ เงื่อนไขกรอง และค่าที่ใช้คำนวณผลรวม โดยจำนวนที่ตรงยังไม่ได้ยืนยันว่าเป็นแถวที่ถูกต้อง');
 }
 
 async function runTest(t: Test, savepoint: boolean): Promise<ReportLine> {
