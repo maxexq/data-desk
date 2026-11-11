@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useViewport } from './viewport';
 
 export interface Rect {
   x: number;
@@ -27,20 +28,27 @@ interface WMState {
   place: (id: string, r: Partial<Rect>) => void;
   taskClick: (id: string) => void;
   closeAll: () => void;
+  /** Pull every window back inside the screen (after a resize or rotation). */
+  refit: () => void;
   /** Minimize every open window (show the desktop). */
   minimizeAll: () => void;
 }
 
 export const TASKBAR_H = 40;
 
-const fitRect = (r: Rect): Rect => {
-  const w = Math.min(r.w, window.innerWidth - 8);
-  const h = Math.min(r.h, window.innerHeight - TASKBAR_H - 4);
+/** The area windows may use: the whole screen above the taskbar. */
+export const deskArea = () => ({ w: window.innerWidth, h: window.innerHeight - TASKBAR_H });
+
+/** Shrink a window to fit the screen, then move it so no edge is outside. */
+export const fitRect = (r: Rect, min = { w: 0, h: 0 }): Rect => {
+  const area = deskArea();
+  const w = Math.max(Math.min(min.w, area.w), Math.min(r.w, area.w));
+  const h = Math.max(Math.min(min.h, area.h), Math.min(r.h, area.h));
   return {
     w,
     h,
-    x: Math.max(4, Math.min(r.x, window.innerWidth - w - 4)),
-    y: Math.max(0, Math.min(r.y, window.innerHeight - TASKBAR_H - h)),
+    x: Math.max(0, Math.min(r.x, area.w - w)),
+    y: Math.max(0, Math.min(r.y, area.h - h)),
   };
 };
 
@@ -112,9 +120,17 @@ export const useWM = create<WMState>((set, get) => ({
 
   closeAll: () => set({ wins: {}, order: [], topId: null }),
 
+  refit: () =>
+    set((s) => ({
+      wins: Object.fromEntries(Object.entries(s.wins).map(([id, w]) => [id, { ...w, ...fitRect(w) }])),
+    })),
+
   minimizeAll: () =>
     set((s) => ({
       wins: Object.fromEntries(Object.entries(s.wins).map(([id, w]) => [id, w.open ? { ...w, min: true } : w])),
       topId: null,
     })),
 }));
+
+// Keep windows on screen when the browser is resized or a phone rotates.
+useViewport.subscribe(() => useWM.getState().refit());

@@ -47,7 +47,7 @@ test('a dragged icon snaps to the grid and stays there after a reload', async ({
   expect(await place(icon(desk, 'notepad'))).toEqual(cellToPoint(3, 2));
   // the others did not move
   expect(await place(icon(desk, 'inbox'))).toEqual(cellToPoint(0, 0));
-  expect(await place(icon(desk, 'settings'))).toEqual(cellToPoint(0, 6));
+  expect(await place(icon(desk, 'settings'))).toEqual(cellToPoint(0, 7));
 
   await desk.reload();
   await expect(icon(desk, 'notepad')).toBeVisible({ timeout: 45_000 });
@@ -58,7 +58,7 @@ test('dropping on another icon swaps the two', async ({ desk }) => {
   await closeInbox(desk);
   await dragTo(desk, 'settings', 0, 0);
   expect(await place(icon(desk, 'settings'))).toEqual(cellToPoint(0, 0));
-  expect(await place(icon(desk, 'inbox'))).toEqual(cellToPoint(0, 6));
+  expect(await place(icon(desk, 'inbox'))).toEqual(cellToPoint(0, 7));
 });
 
 test('desktop menu sorts and auto-arranges icons', async ({ desk }) => {
@@ -68,15 +68,15 @@ test('desktop menu sorts and auto-arranges icons', async ({ desk }) => {
   await desktopMenu(desk);
   await item(desk, 'Sort by name').click();
   await expect(menu(desk)).toHaveCount(0);
-  // console, inbox, manual, notepad, settings, tables, ticket
+  // console, inbox, manual, music, notepad, settings, shareware, tables, ticket
   expect(await place(icon(desk, 'console'))).toEqual(cellToPoint(0, 0));
   expect(await place(icon(desk, 'inbox'))).toEqual(cellToPoint(0, 1));
-  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(0, 6));
+  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(1, 0));
 
   await desktopMenu(desk);
   await item(desk, 'Auto arrange').click();
   await dragTo(desk, 'ticket', 5, 3); // far away: auto-arrange pulls it back into the column
-  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(0, 6));
+  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(1, 0));
   await dragTo(desk, 'ticket', 0, 0); // dropping on the first slot reorders
   expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(0, 0));
   expect(await place(icon(desk, 'console'))).toEqual(cellToPoint(0, 1));

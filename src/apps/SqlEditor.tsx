@@ -7,12 +7,14 @@ import { HighlightStyle, bracketMatching, ensureSyntaxTree, syntaxHighlighting }
 import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
 import { tags as t } from '@lezer/highlight';
 import { formatSql } from '../lib/formatSql';
-import { schemaOf, useGame } from '../state/game';
-import { editor } from './editorHandle';
+import { useGame } from '../state/game';
+import type { EditorHandle } from './editorHandle';
 
-// Table and column names of the open ticket. The SQL grammar treats a few common
-// names (time, name, role…) as keywords or types, so they are excluded from auto-uppercase.
-let idents = new Set<string>();
+export type Schema = Record<string, string[]>;
+
+// Table and column names are excluded from auto-uppercase: the SQL grammar treats a few
+// common names (time, name, role…) as keywords or types.
+const identsOf = (schema: Schema) => new Set([...Object.keys(schema), ...Object.values(schema).flat()].map((x) => x.toLowerCase()));
 
 const highlight = HighlightStyle.define([
   { tag: t.keyword, color: 'var(--kw)' },
@@ -27,7 +29,7 @@ const highlight = HighlightStyle.define([
 const UPPERCASED = new Set(['Keyword', 'Null', 'Bool']);
 
 /** Collect keyword tokens that are not yet uppercase, skipping the word under the cursor. */
-function keywordFixes(state: EditorState, skipAt: number | null) {
+function keywordFixes(state: EditorState, skipAt: number | null, idents: Set<string>) {
   const tree = ensureSyntaxTree(state, state.doc.length, 50);
   const changes: { from: number; to: number; insert: string }[] = [];
   tree?.iterate({
@@ -42,14 +44,15 @@ function keywordFixes(state: EditorState, skipAt: number | null) {
 }
 
 /** Uppercase SQL keywords as soon as the user finishes typing (or pastes) them. */
-const autoUppercase = EditorView.updateListener.of((u) => {
-  if (!u.docChanged || !u.transactions.some((tr) => tr.isUserEvent('input'))) return;
-  const view = u.view;
-  queueMicrotask(() => {
-    const changes = keywordFixes(view.state, view.state.selection.main.head);
-    if (changes.length) view.dispatch({ changes, userEvent: 'format.uppercase' });
+const autoUppercase = (idents: () => Set<string>) =>
+  EditorView.updateListener.of((u) => {
+    if (!u.docChanged || !u.transactions.some((tr) => tr.isUserEvent('input'))) return;
+    const view = u.view;
+    queueMicrotask(() => {
+      const changes = keywordFixes(view.state, view.state.selection.main.head, idents());
+      if (changes.length) view.dispatch({ changes, userEvent: 'format.uppercase' });
+    });
   });
-});
 
 const theme = EditorView.theme({
   '&': { height: '100%', fontSize: '24px', backgroundColor: 'transparent', color: 'var(--ink)' },
@@ -72,55 +75,58 @@ const theme = EditorView.theme({
   '.cm-completionIcon': { display: 'none' },
 });
 
-const language = new Compartment();
-const sqlFor = (schema: Record<string, string[]>) => sql({ dialect: PostgreSQL, schema, upperCaseKeywords: true });
+const sqlFor = (schema: Schema) => sql({ dialect: PostgreSQL, schema, upperCaseKeywords: true });
 
-let current: EditorView | null = null;
-
-function setDoc(text: string) {
-  const v = current;
-  if (!v) return;
-  v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: text }, selection: { anchor: text.length } });
-  v.focus();
+function setDoc(view: EditorView, text: string) {
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text }, selection: { anchor: text.length } });
+  view.focus();
 }
 
-async function format() {
-  const v = current;
-  if (!v) return;
-  const src = v.state.doc.toString();
+async function format(view: EditorView, idents: Set<string>) {
+  const src = view.state.doc.toString();
   if (!src.trim()) return;
   try {
     const out = await formatSql(src);
-    if (out !== src) setDoc(out);
+    if (out !== src) setDoc(view, out);
   } catch {
     // Not parseable yet: still normalise keyword case, and say why layout was skipped.
-    const changes = keywordFixes(v.state, null);
-    if (changes.length) v.dispatch({ changes, userEvent: 'format.uppercase' });
+    const changes = keywordFixes(view.state, null, idents);
+    if (changes.length) view.dispatch({ changes, userEvent: 'format.uppercase' });
     useGame.getState().say('จัดบรรทัดไม่ได้เพราะคำสั่งยังไม่สมบูรณ์ แก้ให้รันได้ก่อนแล้วลองใหม่');
   }
 }
 
-editor.setDoc = setDoc;
-editor.format = format;
+export interface SqlEditorProps {
+  /** Text to start with. Read once: remount (change `key`) to show another document. */
+  doc: string;
+  onChange: (sql: string) => void;
+  onRun: () => void;
+  /** Tables and columns for autocomplete. */
+  schema: Schema;
+  /** Filled in on mount so toolbar buttons can drive this editor. */
+  handle: EditorHandle;
+  label?: string;
+}
 
-/** `docKey` changes whenever a different tab (or ticket) should be shown. */
-export default function SqlEditor({ tabId, docKey }: { tabId: string; docKey: string }) {
+export default function SqlEditor(props: SqlEditorProps) {
   const host = useRef<HTMLDivElement>(null);
+  const latest = useRef(props);
+  latest.current = props;
+  const language = useRef(new Compartment()).current;
+  const idents = useRef(identsOf(props.schema));
+  const view = useRef<EditorView | null>(null);
 
   useEffect(() => {
-    const game = useGame.getState();
-    const doc = (game.active && game.tabsets[game.active]?.tabs.find((tb) => tb.id === tabId)?.sql) ?? '';
-    const schema = schemaOf(game.tables);
-    idents = new Set([...Object.keys(schema), ...Object.values(schema).flat()]);
-    const view = new EditorView({
+    const { doc, handle, schema, label = 'SQL editor' } = latest.current;
+    const v = new EditorView({
       parent: host.current!,
       state: EditorState.create({
         doc,
         selection: { anchor: doc.length },
         extensions: [
           keymap.of([
-            { key: 'Mod-Enter', run: () => (void useGame.getState().run(tabId), true) },
-            { key: 'Shift-Alt-f', run: () => (void format(), true) },
+            { key: 'Mod-Enter', run: () => (latest.current.onRun(), true) },
+            { key: 'Shift-Alt-f', run: () => (void format(v, idents.current), true) },
             ...closeBracketsKeymap,
             ...completionKeymap,
             ...historyKeymap,
@@ -135,32 +141,32 @@ export default function SqlEditor({ tabId, docKey }: { tabId: string; docKey: st
           autocompletion({ icons: false }),
           EditorView.lineWrapping,
           placeholder('SELECT ... FROM ...'),
-          autoUppercase,
+          autoUppercase(() => idents.current),
           theme,
-          EditorView.contentAttributes.of({ 'aria-label': 'SQL editor', spellcheck: 'false', autocapitalize: 'off' }),
+          EditorView.contentAttributes.of({ 'aria-label': label, spellcheck: 'false', autocapitalize: 'off' }),
           EditorView.updateListener.of((u) => {
-            if (u.docChanged) useGame.getState().setSql(tabId, u.state.doc.toString());
+            if (u.docChanged) latest.current.onChange(u.state.doc.toString());
           }),
         ],
       }),
     });
-    current = view;
-    view.focus();
-
-    // Keep autocomplete in step with the workspace (tables created or dropped by the player).
-    const unsubscribe = useGame.subscribe((s, prev) => {
-      if (s.tables === prev.tables) return;
-      const next = schemaOf(s.tables);
-      idents = new Set([...Object.keys(next), ...Object.values(next).flat()]);
-      view.dispatch({ effects: language.reconfigure(sqlFor(next)) });
-    });
-
+    view.current = v;
+    handle.setDoc = (text) => setDoc(v, text);
+    handle.format = () => format(v, idents.current);
+    v.focus();
     return () => {
-      unsubscribe();
-      if (current === view) current = null;
-      view.destroy();
+      handle.setDoc = () => {};
+      handle.format = async () => {};
+      view.current = null;
+      v.destroy();
     };
-  }, [tabId, docKey]);
+  }, [language]);
+
+  // Keep autocomplete in step with the database (tables created or dropped by the player).
+  useEffect(() => {
+    idents.current = identsOf(props.schema);
+    view.current?.dispatch({ effects: language.reconfigure(sqlFor(props.schema)) });
+  }, [props.schema, language]);
 
   return <div ref={host} className="editor sunken" />;
 }

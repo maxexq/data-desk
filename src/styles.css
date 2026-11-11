@@ -1,3 +1,17 @@
+/* ---------- fonts ---------- */
+/* VT323 has no Thai letters. Without this, Thai inside .mono text fell back to whatever
+   monospace font the player's OS has. This face covers only the Thai block, is bundled with
+   the game (no network needed), and is scaled down to sit next to VT323, which renders
+   much smaller than its font-size. */
+@font-face {
+  font-family: 'Plex Thai Mono';
+  src: url('@fontsource/ibm-plex-sans-thai/files/ibm-plex-sans-thai-thai-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0E00-0E7F;
+  size-adjust: 82%;
+}
+
 /* ---------- tokens ---------- */
 :root {
   --desk: #1d6b74;
@@ -23,7 +37,7 @@
   --danger: #b42318;
   --ui: 'Pixelify Sans', 'IBM Plex Sans Thai', sans-serif;
   --thai: 'IBM Plex Sans Thai', sans-serif;
-  --mono: 'VT323', monospace;
+  --mono: 'VT323', 'Plex Thai Mono', monospace;
 }
 
 * {
@@ -1301,4 +1315,647 @@ a:hover {
 }
 .stats {
   flex-wrap: wrap;
+}
+
+/* ---------- shared form bits ---------- */
+.field {
+  font: inherit;
+  font-family: var(--thai);
+  font-size: 14px;
+  padding: 3px 6px;
+  background: #fff;
+  color: var(--ink);
+  border: 0;
+  min-width: 0;
+}
+select.field {
+  padding-right: 2px;
+}
+.seg {
+  display: inline-flex;
+}
+.seg .btn {
+  margin-right: -2px;
+}
+
+/* ---------- Shareware Shelf ---------- */
+.shelf {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.shelf-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.shelf-list {
+  flex: 1;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow: auto;
+  background: var(--paper);
+}
+.shelf-item {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 6px;
+  border-bottom: 1px dashed var(--lo);
+}
+.shelf-item:last-child {
+  border-bottom: 0;
+}
+.shelf-item.locked .shelf-text {
+  opacity: 0.6;
+}
+.shelf-disk {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: var(--disk);
+  border: 2px solid var(--ink);
+  box-shadow: inset -4px -4px 0 rgb(0 0 0 / 0.12);
+}
+.shelf-text p {
+  margin: 2px 0 0;
+}
+.shelf-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.setup-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: rgb(23 23 110 / 0.18);
+}
+.setup {
+  width: min(380px, 92%);
+  padding: 3px;
+}
+.setup .win-title {
+  cursor: default;
+}
+.setup-body {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 10px 6px;
+}
+.setup-body p {
+  margin: 0 0 4px;
+}
+.setup-disk {
+  padding: 4px;
+  background: var(--disk);
+  border: 2px solid var(--ink);
+  animation: disk-in 0.65s steps(3) infinite;
+}
+@keyframes disk-in {
+  0% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(2px);
+  }
+}
+.meter {
+  margin: 6px 10px 10px;
+  height: 20px;
+  padding: 3px;
+  background: #fff;
+}
+.meter-fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--title) 0 10px, transparent 10px 12px);
+  transition: width 0.3s steps(4);
+}
+
+/* ---------- Sandbox ---------- */
+.sandbox {
+  height: 100%;
+}
+.sandbox-bar {
+  flex: none;
+  padding: 2px 4px 4px;
+}
+.sandbox-about {
+  flex: none;
+  margin: 0 4px 6px;
+  font-size: 13px;
+}
+
+/* ---------- Snapshot ---------- */
+.snap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.snap-take {
+  flex: none;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.snap-take p {
+  margin: 0;
+}
+.snap-row {
+  display: flex;
+  gap: 6px;
+}
+.snap-row .field {
+  flex: 1;
+}
+.snap-list {
+  flex: 1;
+  overflow: auto;
+  background: var(--paper);
+}
+.snap-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-bottom: 1px dashed var(--lo);
+}
+.snap-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.snap-actions,
+.snap-confirm {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.snap-dump {
+  flex: 1;
+  overflow: auto;
+}
+.snap-dump .code {
+  min-height: 100%;
+  font-size: 18px;
+}
+
+/* ---------- ER Diagram ---------- */
+.erd {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.erd .toolbar {
+  flex: none;
+}
+.erd-canvas {
+  flex: 1;
+  overflow: auto;
+  background:
+    linear-gradient(var(--chrome-2) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(90deg, var(--chrome-2) 1px, transparent 1px) 0 0 / 20px 20px,
+    var(--paper);
+}
+.erd-world {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+}
+.erd-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.erd-link {
+  fill: none;
+  stroke: var(--mute);
+  stroke-width: 1.5;
+}
+.erd-link.on {
+  stroke: var(--danger);
+  stroke-width: 2.5;
+}
+.erd-table {
+  position: absolute;
+  padding: 2px;
+  user-select: none;
+}
+.erd-table.on {
+  outline: 2px solid var(--danger);
+}
+.erd-head {
+  height: 24px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  color: #fff;
+  background: linear-gradient(90deg, var(--title), var(--title-2));
+  cursor: grab;
+  touch-action: none;
+}
+.erd-col {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 0 2px;
+  font-size: 17px;
+  background: #fff;
+  border-top: 1px solid var(--chrome-2);
+}
+.erd-key {
+  font-size: 13px;
+  text-align: center;
+}
+.erd-key.pk {
+  background: var(--accent);
+  color: var(--ink);
+}
+.erd-key.fk {
+  background: #a5d8ff;
+  color: var(--ink);
+}
+.erd-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.erd-name.nn {
+  font-weight: 700;
+}
+.erd-type {
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* ---------- Desk Tunes (music player) ---------- */
+.amp {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  outline: none;
+}
+.amp-lcd {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  padding: 8px 10px;
+  color: #69f0a0;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.25) 0 1px, transparent 1px 3px),
+    #0c1611;
+  font-family: var(--mono);
+  text-shadow: 0 0 4px rgb(105 240 160 / 0.55);
+}
+.amp-left {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+}
+.amp-state {
+  font-size: 18px;
+}
+.amp-time {
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+.amp-time.blink {
+  animation: blink-text 1s steps(2) infinite;
+}
+@keyframes blink-text {
+  50% {
+    opacity: 0;
+  }
+}
+.amp-spectrum {
+  grid-column: 1 / 3;
+  width: 152px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+.amp-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+}
+.amp-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 22px;
+  padding: 2px 4px;
+  border: 1px solid rgb(105 240 160 / 0.35);
+}
+.amp-marquee span {
+  display: inline-block;
+  animation: marquee 14s linear infinite;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .amp-marquee span {
+    animation: none;
+  }
+}
+.amp-info {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 17px;
+}
+.amp-info span {
+  padding: 0 4px;
+  border: 1px solid rgb(105 240 160 / 0.35);
+  opacity: 0.6;
+}
+.amp-info span:first-child,
+.amp-info span.on {
+  opacity: 1;
+}
+.amp-seek,
+.amp-vol input {
+  accent-color: var(--title);
+}
+.amp-seek {
+  flex: none;
+  width: 100%;
+  margin: 0;
+}
+.amp-controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.amp-buttons,
+.amp-toggles {
+  display: flex;
+  gap: 2px;
+}
+.amp-toggles .btn {
+  font-size: 16px;
+  padding: 2px 6px;
+}
+.amp-vol {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 17px;
+  margin-left: auto;
+}
+.amp-vol input {
+  width: 90px;
+}
+.amp-error {
+  margin: 0;
+}
+.amp-list {
+  flex: 1;
+  min-height: 80px;
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  overflow: auto;
+  background: #0c1611;
+  color: #69f0a0;
+}
+.amp-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 26px 1fr auto auto;
+  gap: 6px;
+  align-items: baseline;
+  padding: 1px 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 19px;
+  text-align: left;
+  cursor: default;
+}
+.amp-item .dim {
+  color: #3fae72;
+}
+.amp-item.on {
+  color: #fff;
+  background: #1d3b8f;
+}
+.amp-item:focus-visible {
+  outline: 1px dotted #69f0a0;
+}
+.amp-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.amp-g {
+  color: #3fae72;
+  font-size: 16px;
+}
+.amp-lic {
+  font-size: 15px;
+  color: #ffd43b;
+}
+.amp-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.tray-music {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 150px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.tray-music span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   Responsive. Three cases:
+   - touch screens of any size: bigger targets, no iOS zoom on focus, no callouts
+   - compact (phone, or a very short landscape screen): windows are full-screen
+     (see Win.tsx), the taskbar shows icons only
+   - narrow content: two-column layouts inside windows stack
+   ========================================================================== */
+#root {
+  height: 100dvh;
+}
+.desktop {
+  -webkit-tap-highlight-color: transparent;
+}
+.desk-icons,
+.win-title,
+.taskbar,
+.ctx {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (pointer: coarse) {
+  .ctl {
+    width: 34px;
+    height: 28px;
+  }
+  .win-title {
+    height: 38px;
+  }
+  .grip {
+    width: 30px;
+    height: 30px;
+  }
+  /* iOS zooms the page into any field under 16px */
+  input,
+  select,
+  textarea,
+  .field {
+    font-size: 16px;
+  }
+  .btn {
+    min-height: 34px;
+  }
+  .taskbar .btn {
+    min-height: 0;
+  }
+  .ctx-item {
+    padding: 9px 22px 9px 6px;
+  }
+  .amp-item {
+    padding: 6px 4px;
+  }
+}
+
+@media (max-width: 759px), (max-height: 499px) {
+  .win {
+    padding: 2px;
+    filter: none;
+  }
+  .win-body {
+    padding: 4px 2px 2px;
+  }
+  .start {
+    padding: 0 8px;
+  }
+  .start-label {
+    display: none;
+  }
+  .tasks {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .task {
+    flex: 0 0 auto;
+    min-width: 40px;
+  }
+  .task span {
+    display: none;
+  }
+  .tray {
+    gap: 8px;
+    padding: 0 6px;
+  }
+  .tray-opt,
+  .tray-music span {
+    display: none;
+  }
+  .toast {
+    left: 8px;
+    right: 8px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* inbox: status, number, title, progress */
+  .ticket-row {
+    grid-template-columns: 24px 52px minmax(0, 1fr) 56px;
+    gap: 6px;
+    padding: 4px 6px;
+  }
+  .ticket-row .kind,
+  .ticket-row .level {
+    display: none;
+  }
+  /* manual and tables: the list goes on top and scrolls sideways */
+  .manual,
+  .tables {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .chapters,
+  .tablelist {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+  }
+  .chapters .btn,
+  .tablelist .btn {
+    flex: none;
+    white-space: nowrap;
+  }
+  .editor {
+    flex-basis: 40%;
+  }
+  .shelf-item {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+  .shelf-actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .snap-item {
+    flex-wrap: wrap;
+  }
+  .snap-actions,
+  .snap-confirm {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .amp-lcd {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .amp-vol {
+    margin-left: 0;
+  }
+  .kbd {
+    display: none;
+  }
 }

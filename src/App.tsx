@@ -3,6 +3,7 @@ import { buildApps } from './apps/registry';
 import { APP_NAME } from './config';
 import { getDb } from './lib/pg';
 import { useGame } from './state/game';
+import { useShelf } from './state/shelf';
 import { useWM } from './state/wm';
 import { DesktopIcons, Taskbar, Toast } from './ui/Desktop';
 import { ContextMenu } from './ui/menu';
@@ -28,6 +29,7 @@ export default function App() {
 
   const onReset = useCallback(() => {
     useGame.getState().resetAll();
+    useShelf.getState().reset();
     useWM.getState().closeAll();
     openDefaults();
   }, []);
