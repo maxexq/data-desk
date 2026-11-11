@@ -988,6 +988,21 @@ a:hover {
   background: var(--chrome);
   white-space: nowrap;
 }
+.env-badge {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  border: 1px solid var(--ink);
+  background: var(--accent);
+  color: var(--ink);
+}
+.env-badge.env-preview {
+  background: #a5d8ff;
+}
+.env-badge.env-local {
+  background: var(--chrome-2);
+}
 .toast {
   position: absolute;
   right: 10px;
