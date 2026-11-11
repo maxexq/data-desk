@@ -44,6 +44,7 @@ interface GameState {
   notes: string;
   crt: boolean;
   unlockAll: boolean;
+  legacyUnlocked: string[];
   streak: { last: string | null; count: number };
   // not persisted
   ready: boolean;
@@ -165,6 +166,7 @@ export const useGame = create<GameState>()(
         notes: '',
         crt: true,
         unlockAll: false,
+        legacyUnlocked: [],
         streak: { last: null, count: 0 },
         ready: false,
         running: false,
@@ -273,12 +275,23 @@ export const useGame = create<GameState>()(
         setUnlockAll: (unlockAll) => set({ unlockAll }),
         say: (text) => set({ toast: { id: ++toastId, text } }),
         resetAll: () =>
-          set({ active: null, progress: {}, tabsets: {}, history: [], streak: { last: null, count: 0 }, results: {}, report: null, justClosed: null, ready: false, tables: null }),
+          set({ active: null, progress: {}, legacyUnlocked: [], tabsets: {}, history: [], streak: { last: null, count: 0 }, results: {}, report: null, justClosed: null, ready: false, tables: null }),
       };
     },
     {
       name: STORAGE_KEY,
-      version: 1,
+      version: 2,
+      migrate: (persisted) => {
+        const saved = persisted as Partial<GameState>;
+        const oldOrder = ['t01', 't02', 't03', 't04', 't05', 't06', 't07'];
+        return {
+          active: saved.active ?? null, progress: saved.progress ?? {}, tabsets: saved.tabsets ?? {},
+          history: saved.history ?? [], notes: saved.notes ?? '', crt: saved.crt ?? true,
+          unlockAll: saved.unlockAll ?? false, streak: saved.streak ?? { last: null, count: 0 },
+          legacyUnlocked: oldOrder.filter((id, i) =>
+          i === 0 || saved.progress?.[id] || saved.progress?.[oldOrder[i - 1]]?.done,
+        ) };
+      },
       partialize: (s) => ({
         active: s.active,
         progress: s.progress,
@@ -287,6 +300,7 @@ export const useGame = create<GameState>()(
         notes: s.notes,
         crt: s.crt,
         unlockAll: s.unlockAll,
+        legacyUnlocked: s.legacyUnlocked,
         streak: s.streak,
       }),
     },
@@ -300,10 +314,10 @@ export const progressOf = (s: GameState, id: string): Progress => s.progress[id]
 export const totalXp = (s: GameState): number =>
   Object.entries(s.progress).reduce((sum, [id, p]) => (p.done ? sum + (getTicket(id)?.xp ?? 0) : sum), 0);
 
-/** A campaign ticket opens once the one before it is closed. */
+/** Preserve access from old saves; new players follow the expanded campaign order. */
 export const isUnlocked = (s: GameState, id: string): boolean => {
   const i = TICKETS.findIndex((t) => t.id === id);
-  return i <= 0 || s.unlockAll || !!s.progress[TICKETS[i - 1].id]?.done;
+  return i <= 0 || s.unlockAll || s.legacyUnlocked.includes(id) || !!s.progress[id] || !!s.progress[TICKETS[i - 1].id]?.done;
 };
 
 /** Table → columns, for the editor's autocomplete. */
