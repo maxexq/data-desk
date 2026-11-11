@@ -6,6 +6,7 @@ import { useGame } from './state/game';
 import { useShelf } from './state/shelf';
 import { useWM } from './state/wm';
 import { DesktopIcons, Taskbar, Toast } from './ui/Desktop';
+import { Mascot } from './ui/Mascot';
 import { ContextMenu } from './ui/menu';
 import { openApp } from './ui/open';
 import { Win } from './ui/Win';
@@ -71,6 +72,7 @@ export default function App() {
         <Win key={a.id} def={a} />
       ))}
       <Toast />
+      <Mascot />
       <Taskbar apps={apps} />
       <ContextMenu />
       {crt && <div className="crt" aria-hidden="true" />}

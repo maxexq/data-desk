@@ -1,8 +1,8 @@
 // Small apps: Notepad, Hint, Settings and the attachment viewer.
 import { memo, useState } from 'react';
 import { APP_NAME } from '../config';
-import { progressOf, useGame } from '../state/game';
-import { getTicket } from '../tickets';
+import { useGame } from '../state/game';
+import { useMascot } from '../state/mascot';
 import { Icon } from '../ui/icons';
 import { CLUE_ART } from './clueArt';
 
@@ -36,40 +36,10 @@ export const Notepad = memo(function Notepad() {
   );
 });
 
-export const Hint = memo(function Hint() {
-  const id = useGame((s) => s.active);
-  const p = useGame((s) => (s.active ? progressOf(s, s.active) : null));
-  const ticket = id ? getTicket(id) : undefined;
-  const task = ticket && p ? ticket.tasks[p.task] : undefined;
-  return (
-    <div className="hint th">
-      <div className="hint-body sunken sel">
-        {!ticket || !p ? (
-          <p className="dim">เปิด ticket ก่อน แล้วคำใบ้ของขั้นที่กำลังทำจะอยู่ที่นี่</p>
-        ) : !task ? (
-          <p>ticket นี้ปิดแล้ว ไม่มีคำใบ้เหลือ</p>
-        ) : p.hintLevel === 0 ? (
-          <p className="dim">คำใบ้มี 3 ระดับ จากแนวคิด ไปจนถึงโครงของคำตอบ (แต่ไม่เฉลยทั้งหมด) กด Next hint เมื่อพร้อม การใช้คำใบ้ถูกนับไว้ในสรุปงาน</p>
-        ) : (
-          task.hints.slice(0, p.hintLevel).map((h, i) => (
-            <p key={i}>
-              <b className="mono">{i + 1}/3</b> {h}
-            </p>
-          ))
-        )}
-      </div>
-      <div className="toolbar end">
-        <button className="btn raised" disabled={!task || !p || p.hintLevel >= 3} onClick={() => useGame.getState().nextHint()}>
-          <Icon name="bulb" /> Next hint
-        </button>
-      </div>
-    </div>
-  );
-});
-
 export const Settings = memo(function Settings({ onReset }: { onReset: () => void }) {
   const crt = useGame((s) => s.crt);
   const unlockAll = useGame((s) => s.unlockAll);
+  const chatty = useMascot((s) => s.chatty);
   const [confirm, setConfirm] = useState(false);
   const g = useGame.getState();
   return (
@@ -77,6 +47,10 @@ export const Settings = memo(function Settings({ onReset }: { onReset: () => voi
       <label className="check">
         <input type="checkbox" checked={crt} onChange={(e) => g.setCrt(e.target.checked)} />
         เส้น scanline แบบจอ CRT
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={chatty} onChange={(e) => useMascot.getState().setChatty(e.target.checked)} />
+        ให้น้องข้าวเหนียวทักเองเมื่อเห็นว่าติดหรือพลาด (ปิดแล้วจะมาเฉพาะตอนกด Hint)
       </label>
       <label className="check">
         <input type="checkbox" checked={unlockAll} onChange={(e) => g.setUnlockAll(e.target.checked)} />

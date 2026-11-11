@@ -20,6 +20,11 @@ npm run preview
 host ต้องอนุญาต WebAssembly และเสิร์ฟไฟล์ `.wasm` กับ `.data` ได้ ถ้า host ไม่ยอมเสิร์ฟ `.data` ให้ build ด้วย
 `DD_DATA_EXT=wasm npm run build` เพื่อส่งไฟล์เดียวกันภายใต้นามสกุลที่ host รับ (ดู `vite.config.ts`)
 
+## ภาพตอนแชร์ลิงก์ (og:image)
+
+`public/og.png` (1200×630) วาดจาก component จริงของเกม (`scripts/og/og.tsx`) แก้แล้วสร้างใหม่ด้วย `node scripts/og/render.mjs`
+meta tag อยู่ใน `index.html` และชี้ไปที่ URL ของ production เพราะ Facebook / LINE / X ต้องการ URL เต็ม
+
 ## Branch และ environment
 
 | branch | environment | URL | deploy เมื่อ |
