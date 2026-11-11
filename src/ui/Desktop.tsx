@@ -10,6 +10,7 @@ import { TASKBAR_H, useWM } from '../state/wm';
 import { rankOf } from '../tickets';
 import { Icon } from './icons';
 import { showMenu, type MenuItem } from './menu';
+import { justLongPressed } from './touch';
 import { openApp } from './open';
 import type { AppDef } from './Win';
 
@@ -92,6 +93,8 @@ export const DesktopIcons = memo(function DesktopIcons({ apps }: { apps: AppDef[
   const onPointerUp = (e: PointerEvent<HTMLButtonElement>) => {
     const d = drag.current;
     drag.current = null;
+    // On a touch screen one tap opens, as on a phone home screen; a mouse still needs a double-click.
+    if (d && !d.moved && e.type === 'pointerup' && e.pointerType !== 'mouse' && !justLongPressed()) return openApp(d.id);
     if (!d?.moved) return;
     e.currentTarget.classList.remove('dragging');
     e.currentTarget.style.transform = '';
@@ -185,7 +188,7 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
       }
     >
       <button className="btn raised start" onClick={() => openApp('inbox')}>
-        <Icon name="inbox" size={20} /> {APP_NAME}
+        <Icon name="inbox" size={20} /> <span className="start-label">{APP_NAME}</span>
       </button>
       <div className="tasks">
         {order.map((id) => {
@@ -225,8 +228,10 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
         )}
         <span data-testid="rank">{rankOf(xp)}</span>
         <span data-testid="xp">{xp} XP</span>
-        <span data-testid="streak">streak {streak}</span>
-        <span>
+        <span data-testid="streak" className="tray-opt">
+          streak {streak}
+        </span>
+        <span className="tray-opt">
           <Clock />
         </span>
       </div>
