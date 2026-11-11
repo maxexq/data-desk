@@ -1,3 +1,17 @@
+/* ---------- fonts ---------- */
+/* VT323 has no Thai letters. Without this, Thai inside .mono text fell back to whatever
+   monospace font the player's OS has. This face covers only the Thai block, is bundled with
+   the game (no network needed), and is scaled down to sit next to VT323, which renders
+   much smaller than its font-size. */
+@font-face {
+  font-family: 'Plex Thai Mono';
+  src: url('@fontsource/ibm-plex-sans-thai/files/ibm-plex-sans-thai-thai-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0E00-0E7F;
+  size-adjust: 82%;
+}
+
 /* ---------- tokens ---------- */
 :root {
   --desk: #1d6b74;
@@ -23,7 +37,7 @@
   --danger: #b42318;
   --ui: 'Pixelify Sans', 'IBM Plex Sans Thai', sans-serif;
   --thai: 'IBM Plex Sans Thai', sans-serif;
-  --mono: 'VT323', monospace;
+  --mono: 'VT323', 'Plex Thai Mono', monospace;
 }
 
 * {
