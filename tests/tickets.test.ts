@@ -52,6 +52,31 @@ describe('daily ticket', () => {
   }, 120_000);
 });
 
+describe('foundation mistakes', () => {
+  const mistakes: [string, number, string][] = [
+    ['f01', 0, 'SELECT id, branch, total_baht FROM orders ORDER BY total_baht DESC, id DESC'],
+    ['f01', 1, 'SELECT id, total_baht FROM orders ORDER BY id LIMIT 3'],
+    ['f01', 2, 'SELECT branch FROM orders ORDER BY branch'],
+    ['f02', 0, 'SELECT id, name FROM customers WHERE phone = NULL ORDER BY id'],
+    ['f02', 1, 'SELECT c.id, c.name FROM customers c JOIN orders o ON o.customer_id = c.id ORDER BY c.id'],
+    ['f02', 2, 'SELECT id, name, phone FROM customers ORDER BY id'],
+    ['f03', 0, "SELECT id, total_baht FROM orders WHERE ordered_at BETWEEN DATE '2026-11-01' AND DATE '2026-11-30' ORDER BY id"],
+    ['f03', 1, "SELECT id, CASE WHEN total_baht <= 100 THEN 'small' WHEN total_baht <= 500 THEN 'medium' ELSE 'large' END FROM orders ORDER BY id"],
+    ['f03', 2, 'SELECT COUNT(*), SUM(total_baht) FROM orders'],
+  ];
+  for (const [id, step, sql] of mistakes) {
+    it(`${id} step ${step + 1} rejects a common misconception`, async () => {
+      const ticket = TICKETS.find((t) => t.id === id)!;
+      await resetWorkspace(ticket);
+      const out = await execSql(sql);
+      expect(out.ok).toBe(true);
+      const check = ticket.tasks[step].check;
+      if (check.kind !== 'result') throw new Error('Expected a result check');
+      expect(await checkResult(check, out.ok ? lastRows(out.results)! : EMPTY)).toBe(false);
+    });
+  }
+});
+
 describe('judge', () => {
   it('explains shape, count, ordering and value errors without revealing reference data', async () => {
     const check = { kind: 'result' as const, expect: 'SELECT * FROM (VALUES (1, 10), (2, 20)) AS v(id, amount) ORDER BY id', ordered: true };

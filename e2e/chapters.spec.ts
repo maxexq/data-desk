@@ -16,18 +16,26 @@ test('chapters preserve campaign locks and advance across chapter boundaries', a
   await desk.reload();
   await desk.locator('.start').click();
   await expect(desk.locator('[data-chapter="first-day"]')).toContainText('จบบทแล้ว · ปิดงาน 1/1');
-  await expect(desk.locator('[data-chapter="sales"]')).toContainText('พร้อมเล่น · ปิดงาน 0/2');
-  await expect(desk.locator('[data-ticket="t02"]')).toBeEnabled();
+  await expect(desk.locator('[data-chapter="sales"]')).toContainText('พร้อมเล่น · ปิดงาน 0/5');
+  await expect(desk.locator('[data-ticket="f01"]')).toBeEnabled();
+  await expect(desk.locator('[data-ticket="t02"]')).toBeDisabled();
   await expect(desk.locator('[data-ticket="t03"]')).toBeDisabled();
+  await openTicket(desk, 'f01');
+  await playTicket(desk, ticketOf('f01'));
+  await desk.getByRole('button', { name: 'งานถัดไป: T-102', exact: true }).click();
+  await expect(desk.locator('.ticket-head')).toContainText('ยอดขายรายสาขา');
 });
 
-test('existing saves supply chapter progress without a migration', async ({ desk }) => {
+test('version 1 saves keep unlocked work after migrating and reloading', async ({ desk }) => {
   await desk.evaluate((key) => localStorage.setItem(key, JSON.stringify({
     state: { unlockAll: false, progress: { t01: { task: 4, done: true, queries: 4, hints: 0, hintLevel: 0 } } }, version: 1,
   })), STORAGE_KEY);
   await desk.setViewportSize({ width: 390, height: 844 });
   await desk.reload();
   await expect(desk.locator('[data-chapter="first-day"] progress')).toHaveAttribute('value', '1');
+  await expect(desk.locator('[data-ticket="t02"]')).toBeEnabled();
+  await expect(desk.locator('[data-ticket="f01"]')).toBeEnabled();
+  await desk.reload();
   await expect(desk.locator('[data-ticket="t02"]')).toBeEnabled();
   await expect(desk.locator('[data-ticket="daily"]')).toBeEnabled();
   expect(await desk.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
