@@ -63,9 +63,25 @@ describe('foundation mistakes', () => {
     ['f03', 0, "SELECT id, total_baht FROM orders WHERE ordered_at BETWEEN DATE '2026-11-01' AND DATE '2026-11-30' ORDER BY id"],
     ['f03', 1, "SELECT id, CASE WHEN total_baht <= 100 THEN 'small' WHEN total_baht <= 500 THEN 'medium' ELSE 'large' END FROM orders ORDER BY id"],
     ['f03', 2, 'SELECT COUNT(*), SUM(total_baht) FROM orders'],
+    // AND binds tighter than OR: every Chiang Mai customer slips in
+    ['f04', 0, "SELECT id, name FROM customers WHERE tier = 'gold' AND city = 'Bangkok' OR city = 'Chiang Mai' ORDER BY id"],
+    ['f04', 1, "SELECT id, email FROM customers WHERE email LIKE '%@gmail.com' ORDER BY id"],
+    ['f04', 1, "SELECT id, email FROM customers WHERE email ILIKE '%gmail%' ORDER BY id"],
+    // NOT IN against a list holding NULL is never true
+    ['f04', 2, 'SELECT id, name FROM customers WHERE id NOT IN (SELECT referred_by FROM customers) ORDER BY id'],
+    ['f05', 0, 'SELECT branch, COUNT(*), COUNT(*), COUNT(customer_id), ROUND(AVG(COALESCE(stars, 0)), 2) FROM reviews GROUP BY branch ORDER BY branch'],
+    // integer division drops the fraction
+    ['f05', 1, 'SELECT branch, day, ROUND(100 * orders / NULLIF(visitors, 0), 1) FROM traffic ORDER BY day, branch'],
+    // an average of daily percentages is not the overall rate
+    ['f05', 2, 'SELECT branch, ROUND(AVG(100.0 * orders / NULLIF(visitors, 0)), 1) FROM traffic GROUP BY branch ORDER BY branch'],
+    ['f06', 0, 'SELECT o.branch, SUM(i.price_baht) FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.branch ORDER BY o.branch'],
+    // joining two child tables at once multiplies rows
+    ['f06', 1, 'SELECT o.branch, SUM(i.qty * i.price_baht), SUM(p.amount_baht) FROM orders o JOIN order_items i ON i.order_id = o.id JOIN payments p ON p.order_id = o.id GROUP BY o.branch ORDER BY o.branch'],
+    // an inner join loses the order nobody has paid for yet
+    ['f06', 2, 'WITH due AS (SELECT order_id, SUM(qty * price_baht) AS due FROM order_items GROUP BY order_id), paid AS (SELECT order_id, SUM(amount_baht) AS paid FROM payments GROUP BY order_id) SELECT o.id, o.branch, due.due, paid.paid, due.due - paid.paid FROM orders o JOIN due ON due.order_id = o.id JOIN paid ON paid.order_id = o.id WHERE due.due > paid.paid ORDER BY o.id'],
   ];
   for (const [id, step, sql] of mistakes) {
-    it(`${id} step ${step + 1} rejects a common misconception`, async () => {
+    it(`${id} step ${step + 1} rejects: ${sql.slice(0, 60)}…`, async () => {
       const ticket = TICKETS.find((t) => t.id === id)!;
       await resetWorkspace(ticket);
       const out = await execSql(sql);

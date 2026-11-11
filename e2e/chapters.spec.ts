@@ -10,13 +10,15 @@ test('chapters preserve campaign locks and advance across chapter boundaries', a
   await expect(desk.locator('[data-ticket="t02"]')).toBeDisabled();
   await openTicket(desk, 't01');
   await playTicket(desk, ticketOf('t01'));
+  await desk.getByRole('button', { name: 'งานถัดไป: T-101A', exact: true }).click();
+  await playTicket(desk, ticketOf('f04'));
   await expect(desk.getByTestId('chapter-summary')).toContainText('จบบทที่ 1');
   await desk.getByRole('button', { name: 'เริ่มบทที่ 2 · อ่านยอดขายให้เป็น' }).click();
   await expect(desk.locator('.ticket-head')).toContainText('บทที่ 2 · อ่านยอดขายให้เป็น');
   await desk.reload();
   await desk.locator('.start').click();
-  await expect(desk.locator('[data-chapter="first-day"]')).toContainText('จบบทแล้ว · ปิดงาน 1/1');
-  await expect(desk.locator('[data-chapter="sales"]')).toContainText('พร้อมเล่น · ปิดงาน 0/5');
+  await expect(desk.locator('[data-chapter="first-day"]')).toContainText('จบบทแล้ว · ปิดงาน 2/2');
+  await expect(desk.locator('[data-chapter="sales"]')).toContainText('พร้อมเล่น · ปิดงาน 0/7');
   await expect(desk.locator('[data-ticket="f01"]')).toBeEnabled();
   await expect(desk.locator('[data-ticket="t02"]')).toBeDisabled();
   await expect(desk.locator('[data-ticket="t03"]')).toBeDisabled();
@@ -39,4 +41,21 @@ test('version 1 saves keep unlocked work after migrating and reloading', async (
   await expect(desk.locator('[data-ticket="t02"]')).toBeEnabled();
   await expect(desk.locator('[data-ticket="daily"]')).toBeEnabled();
   expect(await desk.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('saves from before T-101A / T-102A / T-102D keep what was already open', async ({ desk }) => {
+  // Played under the v2 order: T-101, T-101B and T-102 done, nothing else started.
+  await desk.evaluate((key) => localStorage.setItem(key, JSON.stringify({
+    state: {
+      unlockAll: false,
+      progress: Object.fromEntries(['t01', 'f01', 't02'].map((id) => [id, { task: 9, done: true, queries: 3, hints: 0, hintLevel: 0 }])),
+    },
+    version: 2,
+  })), STORAGE_KEY);
+  await desk.reload();
+  await expect(desk.locator('[data-ticket="f02"]')).toBeEnabled(); // was next after T-102 before
+  await expect(desk.locator('[data-ticket="f04"]')).toBeEnabled(); // new, right after T-101
+  await expect(desk.locator('[data-ticket="f05"]')).toBeEnabled(); // new, right after T-102
+  await expect(desk.locator('[data-ticket="f06"]')).toBeDisabled(); // new, after T-102C which is not done
+  await expect(desk.locator('[data-ticket="t03"]')).toBeDisabled();
 });
