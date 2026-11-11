@@ -1316,3 +1316,289 @@ a:hover {
 .stats {
   flex-wrap: wrap;
 }
+
+/* ---------- shared form bits ---------- */
+.field {
+  font: inherit;
+  font-family: var(--thai);
+  font-size: 14px;
+  padding: 3px 6px;
+  background: #fff;
+  color: var(--ink);
+  border: 0;
+  min-width: 0;
+}
+select.field {
+  padding-right: 2px;
+}
+.seg {
+  display: inline-flex;
+}
+.seg .btn {
+  margin-right: -2px;
+}
+
+/* ---------- Shareware Shelf ---------- */
+.shelf {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.shelf-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.shelf-list {
+  flex: 1;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow: auto;
+  background: var(--paper);
+}
+.shelf-item {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 6px;
+  border-bottom: 1px dashed var(--lo);
+}
+.shelf-item:last-child {
+  border-bottom: 0;
+}
+.shelf-item.locked .shelf-text {
+  opacity: 0.6;
+}
+.shelf-disk {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: var(--disk);
+  border: 2px solid var(--ink);
+  box-shadow: inset -4px -4px 0 rgb(0 0 0 / 0.12);
+}
+.shelf-text p {
+  margin: 2px 0 0;
+}
+.shelf-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.setup-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  background: rgb(23 23 110 / 0.18);
+}
+.setup {
+  width: min(380px, 92%);
+  padding: 3px;
+}
+.setup .win-title {
+  cursor: default;
+}
+.setup-body {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 10px 6px;
+}
+.setup-body p {
+  margin: 0 0 4px;
+}
+.setup-disk {
+  padding: 4px;
+  background: var(--disk);
+  border: 2px solid var(--ink);
+  animation: disk-in 0.65s steps(3) infinite;
+}
+@keyframes disk-in {
+  0% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(2px);
+  }
+}
+.meter {
+  margin: 6px 10px 10px;
+  height: 20px;
+  padding: 3px;
+  background: #fff;
+}
+.meter-fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--title) 0 10px, transparent 10px 12px);
+  transition: width 0.3s steps(4);
+}
+
+/* ---------- Sandbox ---------- */
+.sandbox {
+  height: 100%;
+}
+.sandbox-bar {
+  flex: none;
+  padding: 2px 4px 4px;
+}
+.sandbox-about {
+  flex: none;
+  margin: 0 4px 6px;
+  font-size: 13px;
+}
+
+/* ---------- Snapshot ---------- */
+.snap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.snap-take {
+  flex: none;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.snap-take p {
+  margin: 0;
+}
+.snap-row {
+  display: flex;
+  gap: 6px;
+}
+.snap-row .field {
+  flex: 1;
+}
+.snap-list {
+  flex: 1;
+  overflow: auto;
+  background: var(--paper);
+}
+.snap-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-bottom: 1px dashed var(--lo);
+}
+.snap-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.snap-actions,
+.snap-confirm {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.snap-dump {
+  flex: 1;
+  overflow: auto;
+}
+.snap-dump .code {
+  min-height: 100%;
+  font-size: 18px;
+}
+
+/* ---------- ER Diagram ---------- */
+.erd {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.erd .toolbar {
+  flex: none;
+}
+.erd-canvas {
+  flex: 1;
+  overflow: auto;
+  background:
+    linear-gradient(var(--chrome-2) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(90deg, var(--chrome-2) 1px, transparent 1px) 0 0 / 20px 20px,
+    var(--paper);
+}
+.erd-world {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+}
+.erd-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.erd-link {
+  fill: none;
+  stroke: var(--mute);
+  stroke-width: 1.5;
+}
+.erd-link.on {
+  stroke: var(--danger);
+  stroke-width: 2.5;
+}
+.erd-table {
+  position: absolute;
+  padding: 2px;
+  user-select: none;
+}
+.erd-table.on {
+  outline: 2px solid var(--danger);
+}
+.erd-head {
+  height: 24px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  color: #fff;
+  background: linear-gradient(90deg, var(--title), var(--title-2));
+  cursor: grab;
+  touch-action: none;
+}
+.erd-col {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 0 2px;
+  font-size: 17px;
+  background: #fff;
+  border-top: 1px solid var(--chrome-2);
+}
+.erd-key {
+  font-size: 13px;
+  text-align: center;
+}
+.erd-key.pk {
+  background: var(--accent);
+  color: var(--ink);
+}
+.erd-key.fk {
+  background: #a5d8ff;
+  color: var(--ink);
+}
+.erd-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.erd-name.nn {
+  font-weight: 700;
+}
+.erd-type {
+  font-size: 15px;
+  white-space: nowrap;
+}

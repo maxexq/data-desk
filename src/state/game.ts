@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { STORAGE_KEY } from '../config';
 import { checkResult, describeWorkspace, judge, resetWorkspace, type Report, type TableInfo } from '../lib/judge';
-import { execSql, explainError, inTransaction, lastRows, type Cell } from '../lib/pg';
+import { execSql, explainError, inTransaction, lastRows, type Cell, type ExecOutcome } from '../lib/pg';
 import { TICKETS, getTicket } from '../tickets';
 import { todayKey } from '../tickets/daily';
 import type { Ticket } from '../tickets/types';
@@ -84,6 +84,31 @@ const serial = <T,>(fn: () => Promise<T>): Promise<T> => {
   chain = next.catch(() => undefined);
   return next;
 };
+
+/**
+ * Use the ticket database from outside the game store (Snapshot, ER Diagram) without
+ * interleaving with a run, a check or a reset. With `refresh`, the game re-reads tables
+ * and transaction state afterwards.
+ */
+export const withDb = <T,>(fn: () => Promise<T>, opts: { refresh?: boolean } = {}): Promise<T> =>
+  serial(async () => {
+    try {
+      return await fn();
+    } finally {
+      if (opts.refresh && useGame.getState().active) {
+        const [inTxn, tables] = [await inTransaction(), await describeWorkspace()];
+        useGame.setState((s) => ({ inTxn, tables, dbVersion: s.dbVersion + 1 }));
+      }
+    }
+  });
+
+/** How a query's outcome is shown in a console. */
+export function toView(out: ExecOutcome): RunView {
+  if (!out.ok) return { kind: 'error', raw: out.error.message, friendly: explainError(out.error), hint: out.error.hint };
+  const last = lastRows(out.results);
+  if (last) return { kind: 'rows', columns: last.columns, values: last.values.slice(0, MAX_ROWS), total: last.values.length, ms: out.ms };
+  return { kind: 'ok', statements: out.results.length, affected: out.results.reduce((n, r) => n + r.affected, 0), ms: out.ms };
+}
 
 const newTabSet = (t: Ticket): TabSet => {
   const files: Tab[] = (t.files ?? []).map((f, i) => ({ id: `f${i}`, title: f.name, sql: f.initial, file: true }));
@@ -187,19 +212,8 @@ export const useGame = create<GameState>()(
           if (!t || !sql || s0.running || !s0.ready) return;
           set({ running: true });
           const out = await execSql(sql);
-          let view: RunView;
-          let rows = { columns: [] as string[], values: [] as Cell[][] };
-          if (!out.ok) {
-            view = { kind: 'error', raw: out.error.message, friendly: explainError(out.error), hint: out.error.hint };
-          } else {
-            const last = lastRows(out.results);
-            if (last) {
-              rows = last;
-              view = { kind: 'rows', columns: last.columns, values: last.values.slice(0, MAX_ROWS), total: last.values.length, ms: out.ms };
-            } else {
-              view = { kind: 'ok', statements: out.results.length, affected: out.results.reduce((n, r) => n + r.affected, 0), ms: out.ms };
-            }
-          }
+          const view = toView(out);
+          const rows = (out.ok && lastRows(out.results)) || { columns: [] as string[], values: [] as Cell[][] };
           const p = get().progress[t.id] ?? NO_PROGRESS;
           patchProgress(t.id, { queries: p.queries + 1 });
           set((s) => ({

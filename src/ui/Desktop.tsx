@@ -3,6 +3,7 @@ import { APP_NAME } from '../config';
 import { DEPLOY, deployBadge } from '../deploy';
 import { CELL, ORIGIN, cellToPoint, layoutIcons, pointToCell, reorder, rowsFor, type Point } from '../lib/deskLayout';
 import { useDesk } from '../state/desk';
+import { useShelf, useShelfHasNew } from '../state/shelf';
 import { totalXp, useGame } from '../state/game';
 import { TASKBAR_H, useWM } from '../state/wm';
 import { rankOf } from '../tickets';
@@ -37,7 +38,9 @@ export const DesktopIcons = memo(function DesktopIcons({ apps }: { apps: AppDef[
   const layer = useRef<HTMLElement>(null);
   const drag = useRef<{ id: string; sx: number; sy: number; moved: boolean } | null>(null);
 
-  const icons = useMemo(() => apps.filter((a) => a.desktop), [apps]);
+  const installed = useShelf((s) => s.installed);
+  const shelfNew = useShelfHasNew();
+  const icons = useMemo(() => apps.filter((a) => a.desktop && (!a.store || (installed as string[]).includes(a.id))), [apps, installed]);
   // Stored order first, then any icon the stored order does not know yet.
   const ids = useMemo(() => {
     const all = icons.map((a) => a.id);
@@ -145,6 +148,7 @@ export const DesktopIcons = memo(function DesktopIcons({ apps }: { apps: AppDef[
         >
           <span className="desk-art">
             <Icon name={a.icon} size={48} />
+            {a.id === 'shelf' && shelfNew && <span className="dot" title="มีแผ่นใหม่" data-testid="shelf-new" />}
           </span>
           <span className="desk-label">{a.desktop}</span>
         </button>

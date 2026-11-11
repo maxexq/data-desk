@@ -92,6 +92,8 @@ src/
   state/wm.ts           ตัวจัดการหน้าต่าง
   ui/                   หน้าต่าง เดสก์ท็อป taskbar ไอคอนพิกเซล ตารางผลลัพธ์
   apps/                 Inbox, Ticket, SQL Console, Tables, Manual, Notepad, Hint, Settings, ไฟล์แนบ
+  apps/shelf/           Shareware Shelf และแอปที่ติดตั้งได้: Sandbox, Snapshot, ER Diagram
+  datasets/             ชุดข้อมูลของ Sandbox (สร้างจาก scripts/build-datasets.mjs)
 tests/tickets.test.ts   เล่นทุก ticket ด้วยเฉลยของมันเอง
 ```
 
@@ -113,11 +115,32 @@ tests/tickets.test.ts   เล่นทุก ticket ด้วยเฉลยข
 ข้อควรระวังเมื่อเขียนโจทย์แบบ `result` ที่ต้องเรียงลำดับ (`ordered: true`): ข้อมูลตั้งต้นต้องไม่มีค่าเท่ากันในคอลัมน์ที่ใช้เรียง
 ไม่อย่างนั้นคำตอบที่ถูกจะมีได้หลายลำดับ
 
+## Shareware Shelf
+
+แอปเสริมที่ผู้เล่นได้หลังปิด ticket แล้วกดติดตั้ง (`src/state/shelf.ts`) เงื่อนไขคือแอปต้องไม่ทำงานแทนสิ่งที่ผู้เล่นยังไม่เคยทำเอง
+
+| แอป | ปลดล็อก | ทำอะไร |
+|---|---|---|
+| Sandbox | ปิด T-101 | เซิร์ฟเวอร์ PGlite ตัวที่สอง แยกจาก ticket พร้อม Chinook, Pagila หรือฐานข้อมูลว่าง |
+| Snapshot | ปิด T-104 | `pg_dump --schema=ws` ตัวจริง (`@electric-sql/pglite-tools`) เก็บไฟล์ .sql ไว้ใน IndexedDB แล้ว restore กลับได้ ถ่ายไม่ได้ระหว่าง transaction เปิดค้าง |
+| ER Diagram | ปิด T-105 | อ่านตาราง คอลัมน์ และ foreign key จาก `pg_catalog` วาดเป็นแผนภาพ ใช้ได้ทั้ง workspace ของ ticket และ Sandbox |
+
+ชุดข้อมูลและ pg_dump โหลดเมื่อเปิดแอปครั้งแรกเท่านั้น จึงไม่ทำให้หน้าแรกช้าลง
+
+## ที่มาของชุดข้อมูลใน Sandbox
+
+- **Chinook** 1.4.5 — Copyright (c) 2008-2024 Luis Rocha, MIT License — https://github.com/lerocha/chinook-database
+- **Pagila** — Copyright (c) 2015-2026 Devrim Gündüz, PostgreSQL License — https://github.com/devrimgunduz/pagila
+  ตัดให้เหลือ 16,044 การเช่าแบบ Sakila เดิม และตัด embedding (pgvector), full-text, UUID, รูปและรหัสผ่านของพนักงาน
+  ตาราง payment รวมเป็นตารางเดียวแทน partition
+
+สร้างใหม่ได้ด้วย `node scripts/build-datasets.mjs <โฟลเดอร์ที่มี Chinook_PostgreSql.sql และ pagila-data.sql>`
+
 ## สิ่งที่ยังไม่มี
 
 - ระดับ 9 (การทำงานพร้อมกันหลาย session, lock, isolation) PGlite มีการเชื่อมต่อเดียว จึงจำลองผู้ใช้สองคนพร้อมกันไม่ได้
 - งานประเภท "รีวิว" (หา bug ใน query ของคนอื่น) มีชนิดเตรียมไว้ใน `TicketKind` แต่ยังไม่มีโจทย์
-- workspace ไม่ถูกบันทึกข้ามการโหลดหน้าใหม่ ตารางที่ผู้เล่นสร้างค้างไว้จะหาย (ไฟล์ในแท็บยังอยู่)
+- workspace ไม่ถูกบันทึกเองข้ามการโหลดหน้าใหม่ ตารางที่ผู้เล่นสร้างค้างไว้จะหาย (ไฟล์ในแท็บยังอยู่) ถ้าติดตั้ง Snapshot แล้วเซฟไว้ก็ restore กลับได้
 
 ## ที่มาของเนื้อหาใน manual
 
