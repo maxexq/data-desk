@@ -18,6 +18,10 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Same image as CI: browsers and their libraries are already inside.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -42,25 +46,31 @@ jobs:
           cache: npm
       - run: npm ci
         if: steps.gate.outputs.run == 'true'
-      - run: npx playwright install --with-deps chromium
-        if: steps.gate.outputs.run == 'true'
       # Cloudflare Pages reports its build as a check run on the commit; wait for it to finish.
+      # (Plain Node: the Playwright image has no gh CLI.)
       - name: Wait for Cloudflare Pages to deploy this commit
         if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
+        timeout-minutes: 12
         env:
           GH_TOKEN: ${{ github.token }}
+          CHECKS_URL: ${{ github.api_url }}/repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs
         run: |
-          for i in $(seq 1 60); do
-            state=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs" \
-              --jq '[.check_runs[] | select(.name == "Cloudflare Pages")][0] | "\(.status)/\(.conclusion)"')
-            echo "Cloudflare Pages: $state"
-            case "$state" in
-              completed/success) sleep 20; exit 0 ;;
-              completed/*) echo "::error::Cloudflare Pages deploy did not succeed ($state)"; exit 1 ;;
-            esac
-            sleep 15
-          done
-          echo "::error::Timed out waiting for Cloudflare Pages"; exit 1
+          node -e '
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            (async () => {
+              for (let i = 0; i < 60; i++) {
+                const res = await fetch(process.env.CHECKS_URL, { headers: { authorization: `Bearer ${process.env.GH_TOKEN}`, accept: "application/vnd.github+json" } });
+                const run = (await res.json()).check_runs?.find((c) => c.name === "Cloudflare Pages");
+                const state = run ? `${run.status}/${run.conclusion}` : "not started";
+                console.log("Cloudflare Pages:", state);
+                if (state === "completed/success") { await sleep(20000); return; }
+                if (run?.status === "completed") { console.log(`::error::Cloudflare Pages deploy did not succeed (${state})`); process.exit(1); }
+                await sleep(15000);
+              }
+              console.log("::error::Timed out waiting for Cloudflare Pages");
+              process.exit(1);
+            })();
+          '
       - run: npx playwright test --project=chromium --grep @smoke
         if: steps.gate.outputs.run == 'true'
         env:

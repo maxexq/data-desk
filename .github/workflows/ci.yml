@@ -13,6 +13,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Playwright's own image already holds Chromium, Firefox and WebKit plus every system library
+    # they need, so CI never runs apt-get or downloads a browser. (Those downloads hung the job
+    # whenever the runner could not reach the Ubuntu mirrors.) The tag must match the installed
+    # @playwright/test version; tests/ci.test.ts checks that.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --user 1001
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,12 +27,13 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+        timeout-minutes: 5
       - name: Unit tests (every ticket is solvable by its own answer)
         run: npm test
-      - name: Install browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+        timeout-minutes: 5
       - name: End-to-end tests (against the production build)
         run: npm run e2e
+        timeout-minutes: 12
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
