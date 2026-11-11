@@ -4,7 +4,7 @@ import type { AppDef } from '../ui/Win';
 import { Console } from './Console';
 import { Manual } from './Manual';
 import { Music } from './Music';
-import { AttachmentView, Hint, Notepad, Settings } from './misc';
+import { AttachmentView, Notepad, Settings } from './misc';
 import { ErDiagram } from './shelf/ErDiagram';
 import { Sandbox } from './shelf/Sandbox';
 import { Shelf } from './shelf/Shelf';
@@ -27,7 +27,6 @@ export function buildApps(onReset: () => void): AppDef[] {
     { id: 'erd', title: 'ER Diagram', icon: 'diagram', desktop: 'er diagram', store: true, x: 200, y: 30, w: 900, h: 620, minW: 480, minH: 320, render: () => <ErDiagram /> },
     { id: 'settings', title: 'Settings', icon: 'gear', desktop: 'settings', x: 460, y: 180, w: 400, h: 320, render: () => <Settings onReset={onReset} /> },
     { id: 'music', title: 'Desk Tunes', icon: 'music', desktop: 'music', x: 880, y: 60, w: 440, h: 540, minW: 380, minH: 360, render: () => <Music /> },
-    { id: 'hint', title: 'Hint', icon: 'bulb', x: 260, y: 420, w: 380, h: 300, render: () => <Hint /> },
     { id: 'closed', title: 'Ticket Closed', icon: 'check', x: 330, y: 20, w: 640, h: 700, minW: 420, minH: 320, render: () => <Closed /> },
     ...attachments.map((a, i): AppDef => ({
       id: `att-${a.id}`,

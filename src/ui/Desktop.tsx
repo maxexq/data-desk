@@ -4,6 +4,7 @@ import { DEPLOY, deployBadge } from '../deploy';
 import { CELL, ORIGIN, cellToPoint, layoutIcons, pointToCell, reorder, rowsFor, type Point } from '../lib/deskLayout';
 import { usePlayer } from '../music/player';
 import { useDesk } from '../state/desk';
+import { useMascot } from '../state/mascot';
 import { useShelf, useShelfHasNew } from '../state/shelf';
 import { totalXp, useGame } from '../state/game';
 import { TASKBAR_H, useWM } from '../state/wm';
@@ -118,6 +119,7 @@ export const DesktopIcons = memo(function DesktopIcons({ apps }: { apps: AppDef[
     { label: 'Align to grid', checked: desk.alignGrid, disabled: desk.autoArrange, onSelect: desk.toggleAlignGrid },
     { separator: true },
     { label: 'Open Inbox', icon: 'inbox', onSelect: () => openApp('inbox') },
+    { label: 'Ask น้องข้าวเหนียว for a hint', icon: 'bulb', disabled: !active, onSelect: () => useMascot.getState().showHints() },
     { label: 'Reset ticket data', icon: 'trash', disabled: !active, onSelect: () => void useGame.getState().resetData() },
     { label: 'Show desktop', icon: 'min', onSelect: () => useWM.getState().minimizeAll() },
     { label: 'Close all windows', icon: 'x', onSelect: () => useWM.getState().closeAll() },

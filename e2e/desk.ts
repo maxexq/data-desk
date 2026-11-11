@@ -15,6 +15,8 @@ export const test = base.extend<{ desk: Page }>({
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     await page.addInitScript((key) => {
       if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ state: { unlockAll: true }, version: 1 }));
+      // The mascot speaks up on its own; keep it quiet unless a spec is about it (mascot.spec.ts).
+      if (!localStorage.getItem(`${key}-mascot`)) localStorage.setItem(`${key}-mascot`, JSON.stringify({ state: { met: true, chatty: false }, version: 1 }));
     }, STORAGE_KEY);
     await page.goto('/');
     await expect(page.locator('[data-ticket]').first()).toBeVisible({ timeout: 45_000 });

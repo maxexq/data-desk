@@ -1,6 +1,7 @@
 // Inbox (list of work), the open ticket, and the "ticket closed" summary.
 import { memo, useMemo } from 'react';
 import { isUnlocked, progressOf, totalXp, useGame } from '../state/game';
+import { useMascot } from '../state/mascot';
 import { useWM } from '../state/wm';
 import { TICKETS, getTicket, rankOf } from '../tickets';
 import { todayKey } from '../tickets/daily';
@@ -164,12 +165,18 @@ export const TicketView = memo(function TicketView() {
         {report && (
           <div className={`report ${report.pass ? 'pass' : 'fail'}`} role="status" data-testid="report" data-pass={report.pass}>
             <div className="panel-title">ผลตรวจล่าสุด: {report.pass ? 'ผ่านทั้งหมด' : 'ยังไม่ผ่าน'}</div>
+            {report.taskLabel && <p className="th">{report.taskLabel}</p>}
             {report.lines.map((l, i) => (
               <div key={i} className={`line th ${l.ok ? 'ok' : 'no'}`} data-testid="report-line" data-ok={l.ok}>
                 <span className="mono">{l.ok ? 'PASS' : 'FAIL'}</span>
                 <span>
                   {l.name}
-                  {l.detail && <span className="detail">{l.detail}</span>}
+                  {l.detail && (report.expandable ? (
+                    <details key={`${id}-${p.task}-${p.queries}`} className="result-detail">
+                      <summary>ดูแนวทางแก้ไข</summary>
+                      <span className="detail">{l.detail}</span>
+                    </details>
+                  ) : <span className="detail">{l.detail}</span>)}
                 </span>
               </div>
             ))}
@@ -181,7 +188,7 @@ export const TicketView = memo(function TicketView() {
         <button className="btn raised" data-testid="reset-data" disabled={!ready || running} onClick={() => void g.resetData()}>
           <Icon name="reset" /> Reset data
         </button>
-        <button className="btn raised" onClick={() => openApp('hint')}>
+        <button className="btn raised" data-testid="hint" onClick={() => useMascot.getState().showHints()}>
           <Icon name="bulb" /> Hint
         </button>
         <span className="spacer" />
@@ -218,6 +225,12 @@ export const Closed = memo(function Closed() {
       <h3 className="th">
         {ticket.no} · {ticket.title}
       </h3>
+      {ticket.reply && (
+        <section className="coworker-reply sunken th" aria-label="ข้อความตอบกลับ" data-testid="coworker-reply">
+          <div className="panel-title">ข้อความตอบกลับ · {ticket.reply.from}</div>
+          {ticket.reply.body.map((line, i) => <p key={i}>{line}</p>)}
+        </section>
+      )}
       {ticket.debrief.map((d, i) => (
         <p key={i} className="th">
           {d}

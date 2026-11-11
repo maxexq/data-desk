@@ -1251,6 +1251,19 @@ a:hover {
   font-size: 13px;
   color: var(--mute);
 }
+.result-detail summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 13px;
+  padding: 4px 0;
+}
+.coworker-reply {
+  padding: 12px;
+  margin: 12px 0;
+  background: #fff;
+  line-height: 1.6;
+}
+.coworker-reply p:last-child { margin-bottom: 0; }
 .txn {
   background: var(--accent) !important;
   color: var(--ink);
@@ -1957,5 +1970,110 @@ select.field {
   }
   .kbd {
     display: none;
+  }
+}
+
+/* ---------- น้องข้าวเหนียว (mascot) ---------- */
+.mascot {
+  position: absolute;
+  right: 12px;
+  bottom: 48px;
+  z-index: 99999;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+  animation: mascot-in 0.3s steps(4);
+}
+.mascot > * {
+  pointer-events: auto;
+}
+@keyframes mascot-in {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+.mascot-bubble {
+  position: relative;
+  width: min(330px, calc(100vw - 130px));
+  margin-bottom: 40px;
+  padding: 8px 10px 10px;
+  background: #fffbe0;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 #0003;
+  font-size: 14px;
+  line-height: 1.55;
+}
+/* the tail, pointing at the mascot */
+.mascot-bubble::after {
+  content: '';
+  position: absolute;
+  right: -12px;
+  bottom: 18px;
+  width: 12px;
+  height: 12px;
+  background: #fffbe0;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+.mascot-bubble p {
+  margin: 0 0 6px;
+}
+.mascot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.mascot-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.mascot-body {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  image-rendering: pixelated;
+  animation: mascot-bob 2.4s steps(4) infinite;
+}
+.mascot-body.hop {
+  animation: mascot-hop 0.5s steps(3) 3;
+}
+@keyframes mascot-bob {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes mascot-hop {
+  50% {
+    transform: translateY(-14px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot,
+  .mascot-body,
+  .mascot-body.hop {
+    animation: none;
+  }
+}
+@media (max-width: 759px), (max-height: 499px) {
+  .mascot {
+    left: 8px;
+    right: 8px;
+    justify-content: flex-end;
+  }
+  .mascot-bubble {
+    width: auto;
+    flex: 1;
+    margin-bottom: 30px;
+  }
+  .mascot-body svg {
+    width: 64px;
+    height: 64px;
   }
 }

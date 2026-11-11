@@ -1,0 +1,123 @@
+#og {
+  width: 1200px;
+  height: 630px;
+}
+.og {
+  width: 1200px;
+  height: 630px;
+}
+.og-icons {
+  position: absolute;
+  left: 14px;
+  top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.og-icons .desk-icon {
+  position: static;
+  width: 92px;
+}
+.og-hero {
+  left: 124px;
+  top: 30px;
+  width: 552px;
+  height: 470px;
+}
+.og-hero-body {
+  height: 100%;
+  padding: 28px 30px;
+  background: var(--paper);
+  box-shadow:
+    inset 1px 1px 0 var(--lo),
+    inset -1px -1px 0 var(--hi);
+}
+.og-hero h1 {
+  margin: 6px 0 18px;
+  font-family: 'Pixelify Sans', sans-serif;
+  font-size: 68px;
+  white-space: nowrap;
+  line-height: 1;
+  color: var(--title);
+  text-shadow: 4px 4px 0 var(--accent);
+}
+.og-sub {
+  margin: 0 0 14px;
+  font-size: 33px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.og-sub2 {
+  margin: 0 0 26px;
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--mute);
+}
+.og-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.og-chips span {
+  padding: 2px 10px;
+  font-size: 25px;
+  color: #fff;
+  background: var(--kw);
+}
+.og-console {
+  left: 664px;
+  top: 56px;
+  width: 514px;
+  height: 404px;
+}
+.og-console-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.og-console .code {
+  font-size: 21px;
+  line-height: 1.15;
+  padding: 10px 14px;
+}
+.og-result {
+  background: #fff;
+}
+.og-result .grid {
+  font-size: 18px;
+}
+.og-mascot {
+  position: absolute;
+  right: 26px;
+  bottom: 30px;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.og-bubble {
+  position: relative;
+  margin-bottom: 52px;
+  padding: 10px 16px;
+  font-size: 22px;
+  font-weight: 600;
+  background: #fffbe0;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 #0003;
+}
+.og-bubble::after {
+  content: '';
+  position: absolute;
+  right: -12px;
+  bottom: 14px;
+  width: 12px;
+  height: 12px;
+  background: #fffbe0;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+.og .taskbar .tray {
+  font-size: 20px;
+}
