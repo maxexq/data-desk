@@ -58,6 +58,8 @@ interface GameState {
 
   openTicket: (id: string) => Promise<void>;
   resetData: () => Promise<void>;
+  /** Re-read tables and transaction state from the database (the desktop's Refresh). */
+  refreshDb: () => Promise<void>;
   run: (tabId: string) => Promise<void>;
   submit: () => Promise<void>;
   nextHint: () => void;
@@ -163,6 +165,10 @@ export const useGame = create<GameState>()(
           if (get().active !== id) return; // another ticket was opened meanwhile
           await refresh();
           set({ ready: true });
+        }),
+
+        refreshDb: () => serial(async () => {
+          if (get().active) await refresh();
         }),
 
         resetData: () => serial(async () => {

@@ -1,6 +1,7 @@
 import { memo, useRef, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
 import { TASKBAR_H, useWM } from '../state/wm';
 import { Icon, type IconName } from './icons';
+import { showMenu, wantsNativeMenu, type MenuItem } from './menu';
 
 export interface AppDef {
   id: string;
@@ -95,6 +96,13 @@ export const Win = memo(function Win({ def }: { def: AppDef }) {
     );
   };
 
+  const menu: MenuItem[] = [
+    { label: s.max ? 'Restore' : 'Maximize', icon: s.max ? 'restore' : 'max', onSelect: () => wm.toggleMax(def.id) },
+    { label: 'Minimize', icon: 'min', onSelect: () => wm.minimize(def.id) },
+    { separator: true },
+    { label: 'Close', icon: 'x', onSelect: () => wm.close(def.id) },
+  ];
+
   const style = s.max
     ? { left: 0, top: 0, width: '100%', height: `calc(100% - ${TASKBAR_H}px)`, zIndex: s.z }
     : { left: s.x, top: s.y, width: s.w, height: s.h, zIndex: s.z };
@@ -106,6 +114,7 @@ export const Win = memo(function Win({ def }: { def: AppDef }) {
       style={style}
       aria-label={def.title}
       onPointerDownCapture={() => wm.focus(def.id)}
+      onContextMenu={(e) => !wantsNativeMenu(e.target) && showMenu(e, menu)}
     >
       <header className="win-title" onPointerDown={startMove} onDoubleClick={() => wm.toggleMax(def.id)}>
         <Icon name={def.icon} />
