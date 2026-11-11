@@ -55,9 +55,9 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
         })}
       </div>
       <div className="tray sunken mono">
-        <span>{rankOf(xp)}</span>
-        <span>{xp} XP</span>
-        <span>streak {streak}</span>
+        <span data-testid="rank">{rankOf(xp)}</span>
+        <span data-testid="xp">{xp} XP</span>
+        <span data-testid="streak">streak {streak}</span>
         <span>
           <Clock />
         </span>

@@ -103,10 +103,10 @@ export const Console = memo(function Console() {
         </Suspense>
 
         <div className="toolbar">
-          <button className="btn raised primary" disabled={running || !ready} onClick={() => void g.run(active)}>
+          <button className="btn raised primary" data-testid="run" disabled={running || !ready} onClick={() => void g.run(active)}>
             <Icon name="play" /> Run
           </button>
-          <button className="btn raised" onClick={() => void editor.format()}>
+          <button className="btn raised" data-testid="format" onClick={() => void editor.format()}>
             <Icon name="wand" /> Format
           </button>
           <button className="btn raised" aria-expanded={showHistory} onClick={() => setShowHistory((v) => !v)}>
@@ -138,14 +138,14 @@ export const Console = memo(function Console() {
             </div>
           </div>
         ) : (
-          <div className="results sunken sel" aria-live="polite">
+          <div className="results sunken sel" data-testid="result" aria-live="polite">
             <Result r={result} />
           </div>
         )}
         <div className="statusbar">
-          <span className="sunken cell mono">{!ready ? 'Loading data…' : running ? 'Running…' : statusOf(result)}</span>
+          <span className="sunken cell mono" data-testid="status">{!ready ? 'Loading data…' : running ? 'Running…' : statusOf(result)}</span>
           {inTxn && (
-            <span className="sunken cell mono txn" title="มี transaction เปิดค้างอยู่ ยังไม่ COMMIT หรือ ROLLBACK">
+            <span className="sunken cell mono txn" data-testid="txn" title="มี transaction เปิดค้างอยู่ ยังไม่ COMMIT หรือ ROLLBACK">
               TXN OPEN
             </span>
           )}

@@ -43,6 +43,8 @@ export const Inbox = memo(function Inbox() {
       <button
         key={t.id}
         className={`ticket-row${t.id === active ? ' current' : ''} is-${status}`}
+        data-ticket={t.kind === 'daily' ? 'daily' : t.id}
+        data-status={status}
         disabled={locked}
         onClick={() => startTicket(t.id)}
         aria-label={`${t.no} ${t.title} สถานะ ${status}`}
@@ -151,7 +153,7 @@ export const TicketView = memo(function TicketView() {
 
         <div className="panel-title">สิ่งที่ต้องทำ</div>
         {ticket.tasks.map((t, i) => (
-          <div key={i} className={`goal th${i < p.task ? ' done' : i === p.task ? ' now' : ''}`}>
+          <div key={i} className={`goal th${i < p.task ? ' done' : i === p.task ? ' now' : ''}`} data-task-state={i < p.task ? 'done' : i === p.task ? 'now' : 'todo'}>
             <span className="tick sunken">{i < p.task && <Icon name="check" size={12} />}</span>
             <span>
               <span className="goal-text">{t.goal}</span> <span className="tag mono">{t.skill}</span>
@@ -160,10 +162,10 @@ export const TicketView = memo(function TicketView() {
         ))}
 
         {report && (
-          <div className={`report ${report.pass ? 'pass' : 'fail'}`} role="status">
+          <div className={`report ${report.pass ? 'pass' : 'fail'}`} role="status" data-testid="report" data-pass={report.pass}>
             <div className="panel-title">ผลตรวจล่าสุด: {report.pass ? 'ผ่านทั้งหมด' : 'ยังไม่ผ่าน'}</div>
             {report.lines.map((l, i) => (
-              <div key={i} className={`line th ${l.ok ? 'ok' : 'no'}`}>
+              <div key={i} className={`line th ${l.ok ? 'ok' : 'no'}`} data-testid="report-line" data-ok={l.ok}>
                 <span className="mono">{l.ok ? 'PASS' : 'FAIL'}</span>
                 <span>
                   {l.name}
@@ -176,7 +178,7 @@ export const TicketView = memo(function TicketView() {
       </div>
 
       <div className="toolbar">
-        <button className="btn raised" disabled={!ready || running} onClick={() => void g.resetData()}>
+        <button className="btn raised" data-testid="reset-data" disabled={!ready || running} onClick={() => void g.resetData()}>
           <Icon name="reset" /> Reset data
         </button>
         <button className="btn raised" onClick={() => openApp('hint')}>
@@ -188,7 +190,7 @@ export const TicketView = memo(function TicketView() {
             <Icon name="check" /> ดูสรุปงาน
           </button>
         ) : needsSubmit ? (
-          <button className="btn raised primary" disabled={!ready || running} onClick={() => void g.submit()}>
+          <button className="btn raised primary" data-testid="submit" disabled={!ready || running} onClick={() => void g.submit()}>
             <Icon name="send" /> {running ? 'กำลังตรวจ…' : 'ส่งงาน'}
           </button>
         ) : (
@@ -209,7 +211,7 @@ export const Closed = memo(function Closed() {
 
   const next = TICKETS[TICKETS.findIndex((t) => t.id === ticket.id) + 1];
   return (
-    <div className="solved sel">
+    <div className="solved sel" data-testid="closed" data-ticket={ticket.id}>
       <div className="stamp-wrap">
         <span className="stamp">CLOSED</span>
       </div>
