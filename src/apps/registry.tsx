@@ -1,0 +1,38 @@
+import { TICKETS } from '../tickets';
+import { defs } from '../ui/open';
+import type { AppDef } from '../ui/Win';
+import { Console } from './Console';
+import { Manual } from './Manual';
+import { AttachmentView, Hint, Notepad, Settings } from './misc';
+import { Tables } from './Tables';
+import { Closed, Inbox, TicketView } from './Tickets';
+
+export function buildApps(onReset: () => void): AppDef[] {
+  const attachments = TICKETS.flatMap((t) => t.attachments ?? []);
+  const apps: AppDef[] = [
+    { id: 'inbox', title: 'Inbox', icon: 'inbox', desktop: 'inbox', x: 210, y: 30, w: 760, h: 580, minW: 520, minH: 300, render: () => <Inbox /> },
+    { id: 'ticket', title: 'Ticket', icon: 'ticket', desktop: 'ticket', x: 200, y: 12, w: 440, h: 740, minW: 340, minH: 320, render: () => <TicketView /> },
+    { id: 'console', title: 'SQL Console', icon: 'terminal', desktop: 'console', x: 652, y: 12, w: 700, h: 660, minW: 440, minH: 380, render: () => <Console /> },
+    { id: 'tables', title: 'Tables', icon: 'table', desktop: 'tables', x: 420, y: 150, w: 760, h: 480, minW: 480, minH: 300, render: () => <Tables /> },
+    { id: 'manual', title: 'Instruction Manual', icon: 'book', desktop: 'manual', x: 300, y: 40, w: 760, h: 620, minW: 500, minH: 320, render: () => <Manual /> },
+    { id: 'notepad', title: 'Notepad', icon: 'note', desktop: 'notepad', x: 240, y: 260, w: 380, h: 380, render: () => <Notepad /> },
+    { id: 'settings', title: 'Settings', icon: 'gear', desktop: 'settings', x: 460, y: 180, w: 400, h: 320, render: () => <Settings onReset={onReset} /> },
+    { id: 'hint', title: 'Hint', icon: 'bulb', x: 260, y: 420, w: 380, h: 300, render: () => <Hint /> },
+    { id: 'closed', title: 'Ticket Closed', icon: 'check', x: 330, y: 20, w: 640, h: 700, minW: 420, minH: 320, render: () => <Closed /> },
+    ...attachments.map((a, i): AppDef => ({
+      id: `att-${a.id}`,
+      title: a.file,
+      icon: a.file.endsWith('.txt') ? 'terminal' : 'image',
+      x: 320 + i * 34,
+      y: 50 + i * 26,
+      w: 580,
+      h: 480,
+      minW: 360,
+      minH: 300,
+      render: () => <AttachmentView id={a.id} summary={a.summary} />,
+    })),
+  ];
+  defs.clear();
+  apps.forEach((a) => defs.set(a.id, a));
+  return apps;
+}

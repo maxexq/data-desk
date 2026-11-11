@@ -1,0 +1,5 @@
+# Cloudflare Pages: static site, built by Vite into dist/.
+# Dashboard build settings: build command "npm run build", output directory "dist".
+name = "data-desk"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-01"
