@@ -7,7 +7,7 @@ import { t05 } from './t05-order-sheet';
 import { t06 } from './t06-status-migration';
 import { t07 } from './t07-slow-history';
 import type { Ticket } from './types';
-import { sorting, missing, dates } from './foundations';
+import { averages, dates, fanout, filtering, missing, sorting } from './foundations';
 
 export interface Chapter {
   id: string;
@@ -19,8 +19,8 @@ export interface Chapter {
 
 /** Chapters own campaign order; ticket IDs stay stable for existing saves. */
 export const CHAPTERS: Chapter[] = [
-  { id: 'first-day', title: 'วันแรกที่บริษัท', description: 'ตามรอยเหตุการณ์จากหลักฐาน และหาคำตอบด้วยข้อมูล', skills: 'SELECT · WHERE · JOIN', tickets: [t01] },
-  { id: 'sales', title: 'อ่านยอดขายให้เป็น', description: 'เตรียมรายการ ตรวจข้อมูลที่ขาดและช่วงเวลา แล้วสรุปยอดให้ทีมใช้ตัดสินใจ', skills: 'ORDER BY · DISTINCT · GROUP BY · NULL · LEFT JOIN · CASE · Dates · Window functions', tickets: [sorting, t02, missing, dates, t03] },
+  { id: 'first-day', title: 'วันแรกที่บริษัท', description: 'ตามรอยเหตุการณ์จากหลักฐาน และหาคำตอบด้วยข้อมูล', skills: 'SELECT · WHERE · JOIN · AND / OR · ILIKE · NOT EXISTS', tickets: [t01, filtering] },
+  { id: 'sales', title: 'อ่านยอดขายให้เป็น', description: 'เตรียมรายการ ตรวจข้อมูลที่ขาดและช่วงเวลา แล้วสรุปยอดให้ทีมใช้ตัดสินใจ', skills: 'ORDER BY · DISTINCT · GROUP BY · COUNT / NULLIF · NULL · LEFT JOIN · CASE · Dates · JOIN fan-out · Window functions', tickets: [sorting, t02, averages, missing, dates, fanout, t03] },
   { id: 'recovery', title: 'รับมือข้อมูลผิดพลาด', description: 'กู้สถานการณ์และแก้ข้อมูลอย่างปลอดภัย', skills: 'UPDATE · BEGIN / COMMIT · ROLLBACK', tickets: [t04] },
   { id: 'database', title: 'ออกแบบและดูแลฐานข้อมูล', description: 'จัดระเบียบข้อมูล เปลี่ยนโครงสร้าง และแก้ปัญหาความช้า', skills: 'Schema design · Migration · EXPLAIN · Index', tickets: [t05, t06, t07] },
 ];

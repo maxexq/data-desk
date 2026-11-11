@@ -36,6 +36,8 @@ export async function openTicket(page: Page, id: string) {
 
 /** Replace the editor's content. insertText avoids the editor's auto-closing of quotes and brackets. */
 export async function setEditor(page: Page, sql: string) {
+  // An autocomplete list left open by the previous query would sit on top of the editor.
+  if (await page.locator('.cm-tooltip-autocomplete').count()) await page.keyboard.press('Escape');
   await page.locator('.cm-content').click();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.press('Delete');

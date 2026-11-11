@@ -280,17 +280,24 @@ export const useGame = create<GameState>()(
     },
     {
       name: STORAGE_KEY,
-      version: 2,
-      migrate: (persisted) => {
+      version: 3,
+      migrate: (persisted, version) => {
         const saved = persisted as Partial<GameState>;
-        const oldOrder = ['t01', 't02', 't03', 't04', 't05', 't06', 't07'];
+        // Every campaign order a save may have been played under. Inserting tickets must never
+        // lock something the player could already open, so anything open under an older order stays open.
+        // A save is checked against each order from the one it was made under onward.
+        const pastOrders = [
+          ['t01', 't02', 't03', 't04', 't05', 't06', 't07'], // v1
+          ['t01', 'f01', 't02', 'f02', 'f03', 't03', 't04', 't05', 't06', 't07'], // v2: foundation tickets
+        ].slice(Math.max(0, version - 1));
+        const openUnder = (order: string[]) =>
+          order.filter((id, i) => i === 0 || saved.progress?.[id] || saved.progress?.[order[i - 1]]?.done);
         return {
           active: saved.active ?? null, progress: saved.progress ?? {}, tabsets: saved.tabsets ?? {},
           history: saved.history ?? [], notes: saved.notes ?? '', crt: saved.crt ?? true,
           unlockAll: saved.unlockAll ?? false, streak: saved.streak ?? { last: null, count: 0 },
-          legacyUnlocked: oldOrder.filter((id, i) =>
-          i === 0 || saved.progress?.[id] || saved.progress?.[oldOrder[i - 1]]?.done,
-        ) };
+          legacyUnlocked: [...new Set([...(saved.legacyUnlocked ?? []), ...pastOrders.flatMap(openUnder)])],
+        };
       },
       partialize: (s) => ({
         active: s.active,
