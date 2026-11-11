@@ -11,6 +11,7 @@
 npm install
 npm run dev      # http://localhost:5173
 npm test         # รันเฉลยของทุก ticket ผ่านตัวตรวจ (ต้องผ่านก่อน deploy)
+npm run e2e      # Playwright: เล่นเกมจริงบน production build (ครั้งแรกรัน npx playwright install)
 npm run build    # ตรวจ type แล้วสร้างไฟล์ลง dist/
 npm run preview
 ```
@@ -23,6 +24,14 @@ host ต้องอนุญาต WebAssembly และเสิร์ฟไ�
 
 เชื่อม repo นี้กับ Cloudflare Pages แล้วตั้งค่า build command เป็น `npm run build` และ output directory เป็น `dist`
 (เวอร์ชัน Node อ่านจาก `.node-version`) หรือ deploy จากเครื่องด้วย `npm run build && npx wrangler pages deploy`
+
+## เทสต์
+
+- `npm test` (Vitest) รันเฉลยของทุก ticket ผ่านตัวตรวจใน Node: ยืนยันว่าโจทย์ถูกและแก้ได้
+- `npm run e2e` (Playwright) เล่นผ่าน UI จริง: PostgreSQL บูตในเบราว์เซอร์, ticket ตัวแทนของตัวตรวจทั้ง 4 แบบ, editor,
+  transaction ค้าง, ความคืบหน้าหลัง reload, งานประจำวันกับ streak และระบบหน้าต่าง SQL ที่ใช้มาจาก `solution` ของ ticket เอง
+- `npm run e2e:smoke` รันเฉพาะเทสต์ที่ติดป้าย `@smoke` ใช้กับเว็บจริงได้: `E2E_BASE_URL=https://data-desk.pages.dev npm run e2e:smoke`
+- CI (`.github/workflows/ci.yml`) รันทั้งสองชุดทุก push เข้า `main` และทุก pull request โดย Firefox กับ WebKit รันเฉพาะ smoke
 
 ## Stack
 

@@ -1,0 +1,24 @@
+name: Smoke test (production)
+
+# Checks the live site still boots PostgreSQL. Runs daily and on demand; it is not
+# tied to the moment a Cloudflare deploy finishes.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # 09:00 Asia/Bangkok
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=chromium --grep @smoke
+        env:
+          E2E_BASE_URL: https://data-desk.pages.dev

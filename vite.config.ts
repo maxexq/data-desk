@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // base './' keeps every asset path relative, so the build can be hosted
@@ -8,6 +8,8 @@ const dataExt = process.env.DD_DATA_EXT;
 export default defineConfig({
   base: './',
   plugins: [react()],
+  // Unit tests only; the Playwright specs under e2e/ are run by `npm run e2e`.
+  test: { include: ['tests/**/*.test.ts'] },
   // PGlite ships its own WebAssembly and data files; pre-bundling breaks how it finds them.
   optimizeDeps: { exclude: ['@electric-sql/pglite'] },
   build: {

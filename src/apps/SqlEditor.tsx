@@ -23,13 +23,16 @@ const highlight = HighlightStyle.define([
   { tag: [t.operator, t.punctuation], color: 'var(--ink)' },
 ]);
 
+// Syntax nodes written in capitals: keywords, plus the literals NULL, TRUE and FALSE.
+const UPPERCASED = new Set(['Keyword', 'Null', 'Bool']);
+
 /** Collect keyword tokens that are not yet uppercase, skipping the word under the cursor. */
 function keywordFixes(state: EditorState, skipAt: number | null) {
   const tree = ensureSyntaxTree(state, state.doc.length, 50);
   const changes: { from: number; to: number; insert: string }[] = [];
   tree?.iterate({
     enter(n) {
-      if (n.name !== 'Keyword' || n.to === skipAt) return;
+      if (!UPPERCASED.has(n.name) || n.to === skipAt) return;
       const word = state.sliceDoc(n.from, n.to);
       const up = word.toUpperCase();
       if (word !== up && !idents.has(word.toLowerCase())) changes.push({ from: n.from, to: n.to, insert: up });
