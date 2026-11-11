@@ -1,6 +1,7 @@
 // Inbox (list of work), the open ticket, and the "ticket closed" summary.
 import { memo, useMemo } from 'react';
 import { isUnlocked, progressOf, totalXp, useGame } from '../state/game';
+import { useMascot } from '../state/mascot';
 import { useWM } from '../state/wm';
 import { TICKETS, getTicket, rankOf } from '../tickets';
 import { todayKey } from '../tickets/daily';
@@ -181,7 +182,7 @@ export const TicketView = memo(function TicketView() {
         <button className="btn raised" data-testid="reset-data" disabled={!ready || running} onClick={() => void g.resetData()}>
           <Icon name="reset" /> Reset data
         </button>
-        <button className="btn raised" onClick={() => openApp('hint')}>
+        <button className="btn raised" data-testid="hint" onClick={() => useMascot.getState().showHints()}>
           <Icon name="bulb" /> Hint
         </button>
         <span className="spacer" />
