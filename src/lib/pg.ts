@@ -33,8 +33,11 @@ const parsers = Object.fromEntries(
 
 let dbPromise: Promise<PGlite> | null = null;
 
+/** A fresh PostgreSQL server. The game uses one for tickets; Sandbox starts its own. */
+export const createDb = () => PGlite.create({ parsers });
+
 export function getDb(): Promise<PGlite> {
-  dbPromise ??= PGlite.create({ parsers });
+  dbPromise ??= createDb();
   return dbPromise;
 }
 
@@ -64,9 +67,13 @@ const toError = (e: unknown): PgError => {
   };
 };
 
-/** Run one or more statements. Never throws: errors come back as `{ ok: false }`. */
-export async function execSql(sql: string): Promise<ExecOutcome> {
-  const db = await getDb();
+export type Exec = (sql: string) => Promise<ExecOutcome>;
+
+/** Run one or more statements on the ticket database. Never throws: errors come back as `{ ok: false }`. */
+export const execSql: Exec = async (sql) => execOn(await getDb(), sql);
+
+/** Run one or more statements on any server. Never throws. */
+export async function execOn(db: PGlite, sql: string): Promise<ExecOutcome> {
   const t0 = performance.now();
   const ms = () => Math.round((performance.now() - t0) * 10) / 10;
   try {
@@ -87,11 +94,11 @@ export async function execSql(sql: string): Promise<ExecOutcome> {
 export const lastRows = (results: StmtResult[]): StmtResult | undefined => [...results].reverse().find((r) => r.isQuery);
 
 /** True while the session has an open transaction block (including an aborted one). */
-export async function inTransaction(): Promise<boolean> {
+export async function inTransaction(exec: Exec = execSql): Promise<boolean> {
   // SAVEPOINT is only legal inside a block: outside it fails with 25P01 and changes nothing.
-  const probe = await execSql('SAVEPOINT dd_probe');
+  const probe = await exec('SAVEPOINT dd_probe');
   if (probe.ok) {
-    await execSql('RELEASE SAVEPOINT dd_probe');
+    await exec('RELEASE SAVEPOINT dd_probe');
     return true;
   }
   return probe.error.code !== '25P01'; // 25P02 = inside an aborted block

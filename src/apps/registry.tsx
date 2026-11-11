@@ -4,6 +4,10 @@ import type { AppDef } from '../ui/Win';
 import { Console } from './Console';
 import { Manual } from './Manual';
 import { AttachmentView, Hint, Notepad, Settings } from './misc';
+import { ErDiagram } from './shelf/ErDiagram';
+import { Sandbox } from './shelf/Sandbox';
+import { Shelf } from './shelf/Shelf';
+import { Snapshot } from './shelf/Snapshot';
 import { Tables } from './Tables';
 import { Closed, Inbox, TicketView } from './Tickets';
 
@@ -16,6 +20,10 @@ export function buildApps(onReset: () => void): AppDef[] {
     { id: 'tables', title: 'Tables', icon: 'table', desktop: 'tables', x: 420, y: 150, w: 760, h: 480, minW: 480, minH: 300, render: () => <Tables /> },
     { id: 'manual', title: 'Instruction Manual', icon: 'book', desktop: 'manual', x: 300, y: 40, w: 760, h: 620, minW: 500, minH: 320, render: () => <Manual /> },
     { id: 'notepad', title: 'Notepad', icon: 'note', desktop: 'notepad', x: 240, y: 260, w: 380, h: 380, render: () => <Notepad /> },
+    { id: 'shelf', title: 'Shareware Shelf', icon: 'shelf', desktop: 'shareware', x: 260, y: 40, w: 640, h: 560, minW: 460, minH: 360, render: () => <Shelf /> },
+    { id: 'sandbox', title: 'Sandbox', icon: 'sandbox', desktop: 'sandbox', store: true, x: 230, y: 20, w: 760, h: 680, minW: 480, minH: 420, render: () => <Sandbox /> },
+    { id: 'snapshot', title: 'Snapshot', icon: 'camera', desktop: 'snapshot', store: true, x: 520, y: 60, w: 640, h: 480, minW: 420, minH: 320, render: () => <Snapshot /> },
+    { id: 'erd', title: 'ER Diagram', icon: 'diagram', desktop: 'er diagram', store: true, x: 200, y: 30, w: 900, h: 620, minW: 480, minH: 320, render: () => <ErDiagram /> },
     { id: 'settings', title: 'Settings', icon: 'gear', desktop: 'settings', x: 460, y: 180, w: 400, h: 320, render: () => <Settings onReset={onReset} /> },
     { id: 'hint', title: 'Hint', icon: 'bulb', x: 260, y: 420, w: 380, h: 300, render: () => <Hint /> },
     { id: 'closed', title: 'Ticket Closed', icon: 'check', x: 330, y: 20, w: 640, h: 700, minW: 420, minH: 320, render: () => <Closed /> },

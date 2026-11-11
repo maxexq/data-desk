@@ -1,6 +1,6 @@
-import { Suspense, lazy, memo, useState } from 'react';
+import { Suspense, lazy, memo, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { resultKey, useGame, type RunView } from '../state/game';
+import { resultKey, schemaOf, useGame, type RunView } from '../state/game';
 import { Grid } from '../ui/Grid';
 import { Icon } from '../ui/icons';
 import { openApp } from '../ui/open';
@@ -8,7 +8,7 @@ import { editor } from './editorHandle';
 
 const SqlEditor = lazy(() => import('./SqlEditor'));
 
-const Result = memo(function Result({ r }: { r: RunView | undefined }) {
+export const Result = memo(function Result({ r }: { r: RunView | undefined }) {
   if (!r)
     return (
       <div className="result-msg th">
@@ -43,7 +43,7 @@ const Result = memo(function Result({ r }: { r: RunView | undefined }) {
   return <Grid columns={r.columns} values={r.values} />;
 });
 
-function statusOf(r: RunView | undefined): string {
+export function statusOf(r: RunView | undefined): string {
   if (!r) return 'Ready';
   if (r.kind === 'rows') return `${r.total} row${r.total === 1 ? '' : 's'}${r.total > r.values.length ? ` (showing ${r.values.length})` : ''} · ${r.ms} ms`;
   if (r.kind === 'ok') return `OK · ${r.affected} affected · ${r.ms} ms`;
@@ -59,6 +59,8 @@ export const Console = memo(function Console() {
   const ready = useGame((s) => s.ready);
   const inTxn = useGame((s) => s.inTxn);
   const history = useGame((s) => s.history);
+  const tables = useGame((s) => s.tables);
+  const schema = useMemo(() => schemaOf(tables), [tables]);
   const [showHistory, setShowHistory] = useState(false);
   const g = useGame.getState();
 
@@ -99,7 +101,14 @@ export const Console = memo(function Console() {
 
       <div className="tabpanel raised">
         <Suspense fallback={<div className="editor sunken dim mono pad">Loading editor…</div>}>
-          <SqlEditor key={`${ticketId}/${active}`} tabId={active} docKey={ticketId} />
+          <SqlEditor
+            key={`${ticketId}/${active}`}
+            doc={g.tabsets[ticketId]?.tabs.find((t) => t.id === active)?.sql ?? ''}
+            onChange={(sql) => useGame.getState().setSql(active, sql)}
+            onRun={() => void useGame.getState().run(active)}
+            schema={schema}
+            handle={editor}
+          />
         </Suspense>
 
         <div className="toolbar">

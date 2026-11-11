@@ -14,6 +14,7 @@ export interface AppDef {
   minW?: number;
   minH?: number;
   desktop?: string; // label when shown as a desktop icon
+  store?: boolean; // comes from the Shareware Shelf: on the desktop only once installed
   render: () => ReactNode;
 }
 
