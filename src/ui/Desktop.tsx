@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { APP_NAME } from '../config';
+import { DEPLOY, deployBadge } from '../deploy';
 import { CELL, ORIGIN, cellToPoint, layoutIcons, pointToCell, reorder, rowsFor, type Point } from '../lib/deskLayout';
 import { useDesk } from '../state/desk';
 import { totalXp, useGame } from '../state/game';
@@ -206,6 +207,11 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
         })}
       </div>
       <div className="tray sunken mono">
+        {deployBadge() && (
+          <span data-testid="env" className={`env-badge env-${DEPLOY.env}`} title={DEPLOY.commit ? `${DEPLOY.branch} @ ${DEPLOY.commit}` : 'local build'}>
+            {deployBadge()}
+          </span>
+        )}
         <span data-testid="rank">{rankOf(xp)}</span>
         <span data-testid="xp">{xp} XP</span>
         <span data-testid="streak">streak {streak}</span>

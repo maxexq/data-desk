@@ -20,18 +20,48 @@ npm run preview
 host ต้องอนุญาต WebAssembly และเสิร์ฟไฟล์ `.wasm` กับ `.data` ได้ ถ้า host ไม่ยอมเสิร์ฟ `.data` ให้ build ด้วย
 `DD_DATA_EXT=wasm npm run build` เพื่อส่งไฟล์เดียวกันภายใต้นามสกุลที่ host รับ (ดู `vite.config.ts`)
 
+## Branch และ environment
+
+| branch | environment | URL | deploy เมื่อ |
+|---|---|---|---|
+| `main` | production | https://data-desk.pages.dev | merge PR release จาก `staging` (หรือ hotfix) |
+| `staging` | staging | https://staging.data-desk.pages.dev | merge PR งานใหม่ |
+| อื่นๆ (`feat/…`, `fix/…`) | preview | `https://<branch>.data-desk.pages.dev` | ทุก push (Cloudflare โพสต์ลิงก์ไว้ใน PR) |
+
+ลำดับงานปกติ
+
+```
+feat/xxx ──PR──▶ staging ──PR "Release YYYY-MM-DD"──▶ main
+   (preview)       (staging)                          (production)
+```
+
+1. แตก branch จาก `staging` ตั้งชื่อ `feat/…` หรือ `fix/…` แล้วเปิด PR เข้า `staging`
+2. CI ต้องผ่าน แล้ว merge ลองเล่นบน staging
+3. พร้อมปล่อยเมื่อไหร่ เปิด PR จาก `staging` เข้า `main`
+   (https://github.com/maxexq/data-desk/compare/main...staging) แล้ว merge แบบ **merge commit** ไม่ squash
+   เพื่อให้สอง branch มีประวัติเดียวกันและ PR release ครั้งถัดไปไม่มี commit ซ้ำ
+
+Hotfix: แตกจาก `main` เป็น `hotfix/…` เปิด PR เข้า `main` แล้วเปิด PR `main` → `staging` ตามทันที เพื่อไม่ให้ release ถัดไปทับการแก้
+
+แต่ละ build รู้ว่าตัวเองเป็น environment ไหนจาก `CF_PAGES_BRANCH` ที่ Cloudflare ส่งให้ตอน build (ดู `vite.config.ts` และ `src/deploy.ts`)
+staging, preview และ build ในเครื่องจะมีป้าย `STAGING` / `PREVIEW <branch>` / `LOCAL` ที่ taskbar ส่วน production ไม่มีป้าย
+ความคืบหน้าของผู้เล่นแยกกันเองเพราะแต่ละ URL เป็นคนละ origin (localStorage ไม่ปนกัน)
+
 ## Deploy บน Cloudflare Pages
 
-เชื่อม repo นี้กับ Cloudflare Pages แล้วตั้งค่า build command เป็น `npm run build` และ output directory เป็น `dist`
-(เวอร์ชัน Node อ่านจาก `.node-version`) หรือ deploy จากเครื่องด้วย `npm run build && npx wrangler pages deploy`
+เชื่อม repo นี้กับ Cloudflare Pages แล้วตั้งค่า build command เป็น `npm run build`, output directory เป็น `dist`
+และ production branch เป็น `main` (เวอร์ชัน Node อ่านจาก `.node-version`) branch อื่นจะได้ preview deployment อัตโนมัติ
+หรือ deploy จากเครื่องด้วย `npm run build && npx wrangler pages deploy`
 
 ## เทสต์
 
 - `npm test` (Vitest) รันเฉลยของทุก ticket ผ่านตัวตรวจใน Node: ยืนยันว่าโจทย์ถูกและแก้ได้
 - `npm run e2e` (Playwright) เล่นผ่าน UI จริง: PostgreSQL บูตในเบราว์เซอร์, ticket ตัวแทนของตัวตรวจทั้ง 4 แบบ, editor,
   transaction ค้าง, ความคืบหน้าหลัง reload, งานประจำวันกับ streak และระบบหน้าต่าง SQL ที่ใช้มาจาก `solution` ของ ticket เอง
-- `npm run e2e:smoke` รันเฉพาะเทสต์ที่ติดป้าย `@smoke` ใช้กับเว็บจริงได้: `E2E_BASE_URL=https://data-desk.pages.dev npm run e2e:smoke`
-- CI (`.github/workflows/ci.yml`) รันทั้งสองชุดทุก push เข้า `main` และทุก pull request โดย Firefox กับ WebKit รันเฉพาะ smoke
+- `npm run e2e:smoke` รันเฉพาะเทสต์ที่ติดป้าย `@smoke` ใช้กับเว็บจริงได้: `E2E_BASE_URL=https://data-desk.pages.dev E2E_EXPECT_ENV=production npm run e2e:smoke`
+- CI (`.github/workflows/ci.yml`) รันทั้งสองชุดทุก push เข้า `main` หรือ `staging` และทุก pull request โดย Firefox กับ WebKit รันเฉพาะ smoke
+- `.github/workflows/smoke-deployed.yml` รอ Cloudflare deploy เสร็จหลัง push เข้า `main`/`staging` แล้วรัน smoke กับเว็บนั้น
+  และตรวจป้าย environment ว่าตรง (staging ต้องไม่ได้ build ของ production) รันซ้ำทุกวัน 09:00 ด้วย
 
 ## Stack
 
