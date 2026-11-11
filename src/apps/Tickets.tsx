@@ -3,7 +3,7 @@ import { memo, useMemo } from 'react';
 import { isUnlocked, progressOf, totalXp, useGame } from '../state/game';
 import { useMascot } from '../state/mascot';
 import { useWM } from '../state/wm';
-import { TICKETS, getTicket, rankOf } from '../tickets';
+import { CHAPTERS, TICKETS, chapterLabel, chapterOf, getTicket, rankOf } from '../tickets';
 import { todayKey } from '../tickets/daily';
 import { KIND_LABEL, type Ticket } from '../tickets/types';
 import { Icon } from '../ui/icons';
@@ -71,7 +71,25 @@ export const Inbox = memo(function Inbox() {
         <div className="group th">งานประจำวัน · streak {streak.last === today || streak.count === 0 ? streak.count : `${streak.count} (ทำวันนี้เพื่อรักษาไว้)`} วัน</div>
         {row(daily)}
         <div className="group th">งานหลัก · ปิดตามลำดับเพื่อปลดล็อกงานถัดไป</div>
-        {TICKETS.map(row)}
+        {CHAPTERS.map((chapter) => {
+          const completed = chapter.tickets.filter((t) => progress[t.id]?.done).length;
+          const locked = !chapter.tickets.some((t) => isUnlocked({ ...state, progress, unlockAll }, t.id));
+          const status = completed === chapter.tickets.length ? 'จบบทแล้ว' : locked ? 'ยังไม่ปลดล็อก' : 'พร้อมเล่น';
+          return (
+            <section key={chapter.id} className="campaign-chapter" data-chapter={chapter.id} aria-labelledby={`chapter-${chapter.id}`}>
+              <header className="chapter-head th">
+                <h2 id={`chapter-${chapter.id}`}>{chapterLabel(chapter)}</h2>
+                <p>{chapter.description}</p>
+                <p className="chapter-skills">{chapter.skills}</p>
+                <div className="chapter-progress">
+                  <span>{status} · ปิดงาน {completed}/{chapter.tickets.length}</span>
+                  <progress aria-label={`ความคืบหน้า${chapterLabel(chapter)}`} value={completed} max={chapter.tickets.length} />
+                </div>
+              </header>
+              {chapter.tickets.map(row)}
+            </section>
+          );
+        })}
       </div>
       <div className="statusbar">
         <span className="sunken cell mono">
@@ -106,11 +124,13 @@ export const TicketView = memo(function TicketView() {
 
   const task = ticket.tasks[p.task];
   const needsSubmit = !!task && task.check.kind !== 'result';
+  const chapter = chapterOf(ticket.id);
 
   return (
     <div className="ticket">
       <div className="ticket-scroll sunken sel">
         <header className="ticket-head">
+          {chapter && <div className="chapter-context th">{chapterLabel(chapter)}</div>}
           <div className="mono dim">
             {ticket.no} · {KIND_LABEL[ticket.kind]} · from {ticket.from}
           </div>
@@ -213,10 +233,14 @@ export const Closed = memo(function Closed() {
   const id = useGame((s) => s.justClosed);
   const xp = useGame(totalXp);
   const p = useGame((s) => (s.justClosed ? progressOf(s, s.justClosed) : null));
+  const progress = useGame((s) => s.progress);
   const ticket = id ? getTicket(id) : undefined;
   if (!ticket || !p) return <div className="empty th">ยังไม่มีงานที่เพิ่งปิด</div>;
 
   const next = TICKETS[TICKETS.findIndex((t) => t.id === ticket.id) + 1];
+  const chapter = chapterOf(ticket.id);
+  const chapterDone = chapter?.tickets.every((t) => progress[t.id]?.done);
+  const nextChapter = next && ticket.kind !== 'daily' ? chapterOf(next.id) : undefined;
   return (
     <div className="solved sel" data-testid="closed" data-ticket={ticket.id}>
       <div className="stamp-wrap">
@@ -225,6 +249,12 @@ export const Closed = memo(function Closed() {
       <h3 className="th">
         {ticket.no} · {ticket.title}
       </h3>
+      {chapter && (
+        <div className="chapter-context th" data-testid="chapter-summary">
+          {chapterDone ? `จบ${chapterLabel(chapter)}แล้ว` : chapterLabel(chapter)}
+          {chapterDone && chapter === CHAPTERS[CHAPTERS.length - 1] && CHAPTERS.every((c) => c.tickets.every((t) => progress[t.id]?.done)) && <p>ยินดีด้วย! คุณปิดงานหลักครบทุกบทแล้ว</p>}
+        </div>
+      )}
       {ticket.reply && (
         <section className="coworker-reply sunken th" aria-label="ข้อความตอบกลับ" data-testid="coworker-reply">
           <div className="panel-title">ข้อความตอบกลับ · {ticket.reply.from}</div>
@@ -272,7 +302,7 @@ export const Closed = memo(function Closed() {
               startTicket(next.id);
             }}
           >
-            <Icon name="ticket" /> งานถัดไป: {next.no}
+            <Icon name="ticket" /> {nextChapter && nextChapter !== chapter ? `เริ่ม${chapterLabel(nextChapter)}` : `งานถัดไป: ${next.no}`}
           </button>
         )}
       </div>
