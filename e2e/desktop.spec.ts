@@ -68,15 +68,15 @@ test('desktop menu sorts and auto-arranges icons', async ({ desk }) => {
   await desktopMenu(desk);
   await item(desk, 'Sort by name').click();
   await expect(menu(desk)).toHaveCount(0);
-  // console, inbox, manual, notepad, settings, shareware, tables, ticket
+  // console, inbox, manual, music, notepad, settings, shareware, tables, ticket
   expect(await place(icon(desk, 'console'))).toEqual(cellToPoint(0, 0));
   expect(await place(icon(desk, 'inbox'))).toEqual(cellToPoint(0, 1));
-  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(0, 7));
+  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(1, 0));
 
   await desktopMenu(desk);
   await item(desk, 'Auto arrange').click();
   await dragTo(desk, 'ticket', 5, 3); // far away: auto-arrange pulls it back into the column
-  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(0, 7));
+  expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(1, 0));
   await dragTo(desk, 'ticket', 0, 0); // dropping on the first slot reorders
   expect(await place(icon(desk, 'ticket'))).toEqual(cellToPoint(0, 0));
   expect(await place(icon(desk, 'console'))).toEqual(cellToPoint(0, 1));

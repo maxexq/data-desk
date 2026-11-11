@@ -127,6 +127,16 @@ tests/tickets.test.ts   เล่นทุก ticket ด้วยเฉลยข
 
 ชุดข้อมูลและ pg_dump โหลดเมื่อเปิดแอปครั้งแรกเท่านั้น จึงไม่ทำให้หน้าแรกช้าลง
 
+## Desk Tunes (เครื่องเล่นเพลง)
+
+อยู่บนเดสก์ท็อปตั้งแต่แรก เล่นต่อได้ตอนย่อหน้าต่าง ปิดหน้าต่างแล้วเพลงหยุด ปุ่มลัด Z X C V B เหมือนเครื่องเล่นยุคเก่า
+
+- **Data Desk FM** (`src/music/radio.ts`) แต่งเพลงสดด้วย Web Audio API ไม่มีไฟล์เสียงเลย 3 สถานี:
+  Rainy Desk (lofi beats + เสียงฝน), Mango Café (cafe jazz, brushes + walking bass), Server Room (chill ambient)
+  ทุกสถานีผ่าน saturation กับ low-pass และมีเสียงแผ่นเสียงแตกเบาๆ ระดับเสียงวัดไว้ที่ประมาณ -12 ถึง -16 dB RMS ไม่ clip
+- **ไฟล์เพลง** ใส่ใน `public/music/` แล้วเพิ่มใน `src/music/tracks.ts` พร้อมสัญญาอนุญาตและลิงก์ที่มา ต้องเป็นเพลงที่แจกต่อได้ (เช่น CC0)
+- **เพลงในเครื่องผู้เล่น** กด "เพิ่มเพลงจากเครื่อง" เล่นได้เฉพาะ session นั้น ไม่ถูกอัปโหลดไปไหน
+
 ## ที่มาของชุดข้อมูลใน Sandbox
 
 - **Chinook** 1.4.5 — Copyright (c) 2008-2024 Luis Rocha, MIT License — https://github.com/lerocha/chinook-database
