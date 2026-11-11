@@ -27,6 +27,8 @@ interface WMState {
   place: (id: string, r: Partial<Rect>) => void;
   taskClick: (id: string) => void;
   closeAll: () => void;
+  /** Minimize every open window (show the desktop). */
+  minimizeAll: () => void;
 }
 
 export const TASKBAR_H = 40;
@@ -109,4 +111,10 @@ export const useWM = create<WMState>((set, get) => ({
   },
 
   closeAll: () => set({ wins: {}, order: [], topId: null }),
+
+  minimizeAll: () =>
+    set((s) => ({
+      wins: Object.fromEntries(Object.entries(s.wins).map(([id, w]) => [id, w.open ? { ...w, min: true } : w])),
+      topId: null,
+    })),
 }));

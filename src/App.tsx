@@ -5,6 +5,7 @@ import { getDb } from './lib/pg';
 import { useGame } from './state/game';
 import { useWM } from './state/wm';
 import { DesktopIcons, Taskbar, Toast } from './ui/Desktop';
+import { ContextMenu } from './ui/menu';
 import { openApp } from './ui/open';
 import { Win } from './ui/Win';
 
@@ -69,6 +70,7 @@ export default function App() {
       ))}
       <Toast />
       <Taskbar apps={apps} />
+      <ContextMenu />
       {crt && <div className="crt" aria-hidden="true" />}
     </div>
   );
