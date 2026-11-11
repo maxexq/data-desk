@@ -280,7 +280,7 @@ export const useGame = create<GameState>()(
     },
     {
       name: STORAGE_KEY,
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const saved = persisted as Partial<GameState>;
         // Every campaign order a save may have been played under. Inserting tickets must never
@@ -289,6 +289,7 @@ export const useGame = create<GameState>()(
         const pastOrders = [
           ['t01', 't02', 't03', 't04', 't05', 't06', 't07'], // v1
           ['t01', 'f01', 't02', 'f02', 'f03', 't03', 't04', 't05', 't06', 't07'], // v2: foundation tickets
+          ['t01', 'f04', 'f01', 't02', 'f05', 'f02', 'f03', 'f06', 't03', 't04', 't05', 't06', 't07'], // v3: T-101A, T-102A, T-102D
         ].slice(Math.max(0, version - 1));
         const openUnder = (order: string[]) =>
           order.filter((id, i) => i === 0 || saved.progress?.[id] || saved.progress?.[order[i - 1]]?.done);

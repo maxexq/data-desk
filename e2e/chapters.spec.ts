@@ -59,3 +59,16 @@ test('saves from before T-101A / T-102A / T-102D keep what was already open', as
   await expect(desk.locator('[data-ticket="f06"]')).toBeDisabled(); // new, after T-102C which is not done
   await expect(desk.locator('[data-ticket="t03"]')).toBeDisabled();
 });
+
+test('saves from before the data-team chapter keep T-104 open after T-103', async ({ desk }) => {
+  const done = ['t01', 'f04', 'f01', 't02', 'f05', 'f02', 'f03', 'f06', 't03'];
+  await desk.evaluate(([key, ids]) => localStorage.setItem(key, JSON.stringify({
+    state: { unlockAll: false, progress: Object.fromEntries(ids.map((id) => [id, { task: 9, done: true, queries: 3, hints: 0, hintLevel: 0 }])) },
+    version: 3,
+  })), [STORAGE_KEY, done] as const);
+  await desk.reload();
+  await expect(desk.locator('[data-ticket="t04"]')).toBeEnabled(); // was next after T-103 before
+  await expect(desk.locator('[data-ticket="f07"]')).toBeEnabled(); // the new chapter starts after T-103
+  await expect(desk.locator('[data-ticket="f08"]')).toBeDisabled();
+  await expect(desk.locator('[data-ticket="t05"]')).toBeDisabled();
+});
