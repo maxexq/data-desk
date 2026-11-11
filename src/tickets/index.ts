@@ -8,8 +8,25 @@ import { t06 } from './t06-status-migration';
 import { t07 } from './t07-slow-history';
 import type { Ticket } from './types';
 
-/** The campaign, in unlock order. Add a ticket by writing a file like the others and listing it here. */
-export const TICKETS: Ticket[] = [t01, t02, t03, t04, t05, t06, t07];
+export interface Chapter {
+  id: string;
+  title: string;
+  description: string;
+  skills: string;
+  tickets: Ticket[];
+}
+
+/** Chapters own campaign order; ticket IDs stay stable for existing saves. */
+export const CHAPTERS: Chapter[] = [
+  { id: 'first-day', title: 'วันแรกที่บริษัท', description: 'ตามรอยเหตุการณ์จากหลักฐาน และหาคำตอบด้วยข้อมูล', skills: 'SELECT · WHERE · JOIN', tickets: [t01] },
+  { id: 'sales', title: 'อ่านยอดขายให้เป็น', description: 'เปลี่ยนรายการขายให้เป็นรายงานที่ทีมใช้ตัดสินใจ', skills: 'GROUP BY · HAVING · CTE · Window functions', tickets: [t02, t03] },
+  { id: 'recovery', title: 'รับมือข้อมูลผิดพลาด', description: 'กู้สถานการณ์และแก้ข้อมูลอย่างปลอดภัย', skills: 'UPDATE · BEGIN / COMMIT · ROLLBACK', tickets: [t04] },
+  { id: 'database', title: 'ออกแบบและดูแลฐานข้อมูล', description: 'จัดระเบียบข้อมูล เปลี่ยนโครงสร้าง และแก้ปัญหาความช้า', skills: 'Schema design · Migration · EXPLAIN · Index', tickets: [t05, t06, t07] },
+];
+
+export const TICKETS: Ticket[] = CHAPTERS.flatMap((chapter) => chapter.tickets);
+export const chapterOf = (ticketId: string) => CHAPTERS.find((chapter) => chapter.tickets.some((ticket) => ticket.id === ticketId));
+export const chapterLabel = (chapter: Chapter) => `บทที่ ${CHAPTERS.indexOf(chapter) + 1} · ${chapter.title}`;
 
 const dailyCache = new Map<string, Ticket>();
 

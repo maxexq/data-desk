@@ -1108,6 +1108,18 @@ a:hover {
   text-align: left;
   cursor: pointer;
 }
+.campaign-chapter { margin: 8px 0 14px; }
+.chapter-head {
+  padding: 10px 8px;
+  background: #eef0eb;
+  border-bottom: 1px solid var(--mute);
+}
+.chapter-head h2 { margin: 0; font-size: 15px; }
+.chapter-head p { margin: 4px 0; font-size: 12px; }
+.chapter-skills { color: var(--mute); overflow-wrap: anywhere; }
+.chapter-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 12px; }
+.chapter-progress progress { width: 100px; height: 12px; max-width: 100%; }
+.chapter-context { margin: 8px 0; font-size: 13px; font-weight: 600; }
 .ticket-row:hover:not(:disabled),
 .ticket-row:focus-visible {
   background: #fff7d6;
