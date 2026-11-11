@@ -1805,3 +1805,157 @@ select.field {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ==========================================================================
+   Responsive. Three cases:
+   - touch screens of any size: bigger targets, no iOS zoom on focus, no callouts
+   - compact (phone, or a very short landscape screen): windows are full-screen
+     (see Win.tsx), the taskbar shows icons only
+   - narrow content: two-column layouts inside windows stack
+   ========================================================================== */
+#root {
+  height: 100dvh;
+}
+.desktop {
+  -webkit-tap-highlight-color: transparent;
+}
+.desk-icons,
+.win-title,
+.taskbar,
+.ctx {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (pointer: coarse) {
+  .ctl {
+    width: 34px;
+    height: 28px;
+  }
+  .win-title {
+    height: 38px;
+  }
+  .grip {
+    width: 30px;
+    height: 30px;
+  }
+  /* iOS zooms the page into any field under 16px */
+  input,
+  select,
+  textarea,
+  .field {
+    font-size: 16px;
+  }
+  .btn {
+    min-height: 34px;
+  }
+  .taskbar .btn {
+    min-height: 0;
+  }
+  .ctx-item {
+    padding: 9px 22px 9px 6px;
+  }
+  .amp-item {
+    padding: 6px 4px;
+  }
+}
+
+@media (max-width: 759px), (max-height: 499px) {
+  .win {
+    padding: 2px;
+    filter: none;
+  }
+  .win-body {
+    padding: 4px 2px 2px;
+  }
+  .start {
+    padding: 0 8px;
+  }
+  .start-label {
+    display: none;
+  }
+  .tasks {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .task {
+    flex: 0 0 auto;
+    min-width: 40px;
+  }
+  .task span {
+    display: none;
+  }
+  .tray {
+    gap: 8px;
+    padding: 0 6px;
+  }
+  .tray-opt,
+  .tray-music span {
+    display: none;
+  }
+  .toast {
+    left: 8px;
+    right: 8px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* inbox: status, number, title, progress */
+  .ticket-row {
+    grid-template-columns: 24px 52px minmax(0, 1fr) 56px;
+    gap: 6px;
+    padding: 4px 6px;
+  }
+  .ticket-row .kind,
+  .ticket-row .level {
+    display: none;
+  }
+  /* manual and tables: the list goes on top and scrolls sideways */
+  .manual,
+  .tables {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .chapters,
+  .tablelist {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+  }
+  .chapters .btn,
+  .tablelist .btn {
+    flex: none;
+    white-space: nowrap;
+  }
+  .editor {
+    flex-basis: 40%;
+  }
+  .shelf-item {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+  .shelf-actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .snap-item {
+    flex-wrap: wrap;
+  }
+  .snap-actions,
+  .snap-confirm {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .amp-lcd {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .amp-vol {
+    margin-left: 0;
+  }
+  .kbd {
+    display: none;
+  }
+}
