@@ -1,10 +1,10 @@
 import type { Task, Ticket } from './types';
 
 // These tasks compare complete results, including duplicate rows and requested ordering.
-const task = (goal: string, skill: string, solution: string, hints: Task['hints'], ordered = true): Task => ({
+export const task = (goal: string, skill: string, solution: string, hints: Task['hints'], ordered = true): Task => ({
   goal, skill, solution, hints, check: { kind: 'result', expect: solution, ordered },
 });
-const format = 'จำนวนและลำดับคอลัมน์ต้องตรงตามโจทย์ ตั้งชื่อคอลัมน์เองได้ และเรียงแถวตามที่ระบุ';
+export const format = 'จำนวนและลำดับคอลัมน์ต้องตรงตามโจทย์ ตั้งชื่อคอลัมน์เองได้ และเรียงแถวตามที่ระบุ';
 
 export const sorting: Ticket = {
   id: 'f01', no: 'T-101B', title: 'จัดรายการก่อนประชุม', from: 'Ploy · Sales', kind: 'request', level: 2, xp: 100,
