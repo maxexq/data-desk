@@ -1,0 +1,68 @@
+name: Smoke test (deployed sites)
+
+# Checks that production and staging still boot PostgreSQL and serve the build of the
+# right branch. Runs daily, after a push to main or staging (once Cloudflare has had
+# time to deploy), and on demand.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # 09:00 Asia/Bangkok
+  push:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env: production
+            branch: main
+            url: https://data-desk.pages.dev
+          - env: staging
+            branch: staging
+            url: https://staging.data-desk.pages.dev
+    steps:
+      # On a push, only check the site that push deploys.
+      - name: Skip the other environment
+        id: gate
+        run: echo "run=${{ github.event_name != 'push' || github.ref_name == matrix.branch }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+        if: steps.gate.outputs.run == 'true'
+      - run: npx playwright install --with-deps chromium
+        if: steps.gate.outputs.run == 'true'
+      # Cloudflare Pages reports its build as a check run on the commit; wait for it to finish.
+      - name: Wait for Cloudflare Pages to deploy this commit
+        if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 60); do
+            state=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs" \
+              --jq '[.check_runs[] | select(.name == "Cloudflare Pages")][0] | "\(.status)/\(.conclusion)"')
+            echo "Cloudflare Pages: $state"
+            case "$state" in
+              completed/success) sleep 20; exit 0 ;;
+              completed/*) echo "::error::Cloudflare Pages deploy did not succeed ($state)"; exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "::error::Timed out waiting for Cloudflare Pages"; exit 1
+      - run: npx playwright test --project=chromium --grep @smoke
+        if: steps.gate.outputs.run == 'true'
+        env:
+          E2E_BASE_URL: ${{ matrix.url }}
+          E2E_EXPECT_ENV: ${{ matrix.env }}
