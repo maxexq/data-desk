@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState, type PointerEvent } from 'r
 import { APP_NAME } from '../config';
 import { DEPLOY, deployBadge } from '../deploy';
 import { CELL, ORIGIN, cellToPoint, layoutIcons, pointToCell, reorder, rowsFor, type Point } from '../lib/deskLayout';
+import { usePlayer } from '../music/player';
 import { useDesk } from '../state/desk';
 import { useShelf, useShelfHasNew } from '../state/shelf';
 import { totalXp, useGame } from '../state/game';
@@ -170,6 +171,7 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
   const order = useWM((s) => s.order);
   const topId = useWM((s) => s.topId);
   useWM((s) => s.wins);
+  const nowPlaying = usePlayer((s) => (s.status === 'stopped' ? null : s.tracks[s.index]?.title));
   const xp = useGame(totalXp);
   const streak = useGame((s) => s.streak.count);
   return (
@@ -211,6 +213,11 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
         })}
       </div>
       <div className="tray sunken mono">
+        {nowPlaying && (
+          <button className="tray-music" data-testid="tray-music" title={`กำลังเล่น: ${nowPlaying}`} onClick={() => openApp('music')}>
+            <Icon name="music" /> <span>{nowPlaying}</span>
+          </button>
+        )}
         {deployBadge() && (
           <span data-testid="env" className={`env-badge env-${DEPLOY.env}`} title={DEPLOY.commit ? `${DEPLOY.branch} @ ${DEPLOY.commit}` : 'local build'}>
             {deployBadge()}
