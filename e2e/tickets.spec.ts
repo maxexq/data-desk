@@ -8,12 +8,31 @@ test('result check: T-101 closes and awards XP', async ({ desk }) => {
   await openTicket(desk, t.id);
   await playTicket(desk, t);
   await expect(desk.getByTestId('xp')).toHaveText(`${t.xp} XP`);
+  await expect(desk.getByTestId('coworker-reply')).toContainText('Krit · CTO');
+  await expect(desk.getByTestId('coworker-reply')).toContainText('T-102');
+  await desk.reload();
+  await desk.getByRole('button', { name: 'ดูสรุปงาน' }).click();
+  await expect(desk.getByTestId('coworker-reply')).toContainText('T-102');
 });
 
 test('result check: a wrong answer does not advance', async ({ desk }) => {
   await openTicket(desk, 't02');
   await run(desk, 'SELECT branch_id, 1 FROM orders GROUP BY branch_id');
   await expect(desk.locator('[data-task-state="done"]')).toHaveCount(0);
+  const report = desk.getByTestId('report');
+  await expect(report).toContainText('ค่ายังไม่ตรง');
+  await expect(report.locator('.detail')).toBeHidden();
+  await report.getByText('ดูแนวทางแก้ไข').click();
+  await expect(report.locator('.detail')).toBeVisible();
+  await run(desk, 'SELECT branch_id FROM orders GROUP BY branch_id');
+  await expect(report).toContainText('จำนวนคอลัมน์');
+  await expect(report.locator('.detail')).toBeHidden();
+  await run(desk, ticketOf('t02').tasks[0].solution as string);
+  await expect(report).toHaveAttribute('data-pass', 'true');
+  await expect(report).toContainText('ขั้นที่ 1:');
+  await expect(desk.locator('[data-task-state="done"]')).toHaveCount(1);
+  await run(desk, 'SELECT 1/0');
+  await expect(report).toHaveCount(0);
 });
 
 test('state check: T-104 starts inside an open transaction and needs COMMIT', async ({ desk }) => {

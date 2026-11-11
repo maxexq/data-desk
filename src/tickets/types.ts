@@ -11,7 +11,7 @@ export interface Test {
 export type Check =
   /** Checked automatically on every Run against the query's result. */
   | { kind: 'result'; expect: string; ordered?: boolean }
-  | { kind: 'result'; test: (r: Rows) => boolean }
+  | { kind: 'result'; test: (r: Rows) => boolean; feedback?: string }
   /** Submit: tests run against the player's live workspace. */
   | { kind: 'state'; tests: Test[]; noOpenTxn?: boolean; rollbackFirst?: boolean }
   /** Submit: the player's files run on a fresh copy of the seed, phase by phase. */
@@ -53,6 +53,7 @@ export interface Ticket {
   files?: { name: string; initial: string }[];
   tasks: Task[];
   debrief: string[];
+  reply?: { from: string; body: string[] };
   xp: number;
 }
 

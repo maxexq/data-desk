@@ -71,7 +71,7 @@ INSERT INTO statements VALUES
     {
       goal: 'ดูรายชื่อผู้ต้องสงสัยทั้งหมดในตาราง suspects',
       skill: 'SELECT',
-      check: { kind: 'result', test: (r) => has(r, 'Lena Park', 'Dev Okafor', 'Mara Quill', 'Otto Brand', 'Iris Vance', 'Ben Ashby') },
+      check: { kind: 'result', test: (r) => has(r, 'Lena Park', 'Dev Okafor', 'Mara Quill', 'Otto Brand', 'Iris Vance', 'Ben Ashby'), feedback: 'ผลลัพธ์ต้องมีชื่อผู้ต้องสงสัยครบทุกคน ลองสำรวจ suspects โดยยังไม่กรองแถว' },
       hints: [
         'ทุกคำค้นเริ่มด้วย SELECT ตามด้วยสิ่งที่อยากดู แล้ว FROM ตามด้วยชื่อตาราง (manual บทที่ 1)',
         'เครื่องหมาย * แปลว่าเอาทุกคอลัมน์ เหมาะกับการสำรวจตารางครั้งแรก',
@@ -82,7 +82,7 @@ INSERT INTO statements VALUES
     {
       goal: 'หาบันทึกประตูของห้อง Server Room ที่เกิดหลัง 21:00',
       skill: 'WHERE',
-      check: { kind: 'result', test: (r) => has(r, '21:36', '21:05') && !has(r, '20:11') && !has(r, '10:15') && !flat(r).includes('Lobby') },
+      check: { kind: 'result', test: (r) => has(r, '21:36', '21:05') && !has(r, '20:11') && !has(r, '10:15') && !flat(r).includes('Lobby'), feedback: 'ตรวจทั้งชื่อห้องและเวลาใน WHERE ต้องเป็น Server Room หลัง 21:00 และแสดงเวลาในผลลัพธ์ด้วย' },
       hints: [
         'ใช้ WHERE กรองแถวในตาราง door_logs ถ้ามีสองเงื่อนไขให้เชื่อมด้วย AND (manual บทที่ 2)',
         "รูปป้ายหน้าห้องในไฟล์แนบบอกค่าที่ต้องใช้กับคอลัมน์ door ส่วนเวลาเทียบแบบข้อความได้ เช่น time > '21:00'",
@@ -93,7 +93,7 @@ INSERT INTO statements VALUES
     {
       goal: 'คำสั่งลบถูกพิมพ์ในห้องตอน 21:42 ทำให้ผลลัพธ์มี "ชื่อ" คู่กับเวลาเข้าออกของห้องนั้นหลัง 21:00 ในตารางเดียว',
       skill: 'JOIN',
-      check: { kind: 'result', test: (r) => has(r, 'Dev Okafor', '21:36') && !has(r, 'Mara Quill') && r.values.length <= 8 },
+      check: { kind: 'result', test: (r) => has(r, 'Dev Okafor', '21:36') && !has(r, 'Mara Quill') && r.values.length <= 8, feedback: 'ผลลัพธ์ต้องมีชื่อคู่กับเวลารูดบัตร ตรวจการ JOIN ผ่าน badge_id และคงเงื่อนไขห้องกับเวลาไว้' },
       hints: [
         'door_logs มีแค่ badge_id ไม่มีชื่อ ชื่ออยู่ในตาราง suspects ต้องเอาสองตารางมาต่อกันด้วย JOIN (manual บทที่ 4)',
         'จับคู่ด้วยคอลัมน์ที่มีทั้งสองตาราง: JOIN suspects AS s ON s.badge_id = d.badge_id แล้วคงเงื่อนไข WHERE เดิมไว้',
@@ -108,7 +108,7 @@ ORDER BY d.time;`,
     {
       goal: 'ปิดงาน: ดูคู่ in / out ว่าใครอยู่ในห้องตอน 21:42 แล้วรัน query ที่คืนแถวเดียว คอลัมน์เดียว คือชื่อของคนคนนั้น',
       skill: 'WHERE',
-      check: { kind: 'result', test: (r) => r.values.length === 1 && r.values[0].length === 1 && r.values[0][0] === 'Dev Okafor' },
+      check: { kind: 'result', test: (r) => r.values.length === 1 && r.values[0].length === 1 && r.values[0][0] === 'Dev Okafor', feedback: 'ส่งเฉพาะชื่อหนึ่งคน เป็นหนึ่งแถวหนึ่งคอลัมน์ โดยเวลา in / out ของคนนั้นต้องครอบคลุม 21:42' },
       hints: [
         'จากผลลัพธ์ข้อก่อน หาคนที่มีเวลา in ก่อน 21:42 และเวลา out หลัง 21:42',
         'เมื่อรู้ว่าเป็นใครแล้ว เลือกเฉพาะคอลัมน์ name จากตาราง suspects และกรองให้เหลือคนเดียว',
@@ -121,4 +121,8 @@ ORDER BY d.time;`,
     'Dev Okafor เด็กฝึกงาน ออกจากตึกตอน 19:02 ตามที่ให้การ แต่รูดบัตรกลับเข้ามาตอน 21:30 แล้วอยู่ในห้อง Server Room ตั้งแต่ 21:36 ถึง 21:58 ซึ่งครอบเวลา 21:42',
     'สิ่งที่ได้ฝึก: อ่านตารางด้วย SELECT กรองด้วย WHERE และต่อสองตารางด้วย JOIN ผ่านคอลัมน์ที่ใช้ร่วมกัน',
   ],
+  reply: { from: 'Krit · CTO', body: [
+    'ได้รับหลักฐานแล้ว ผมจะคุยกับ Dev ต่อเอง ขอบคุณที่ไล่จากบันทึกประตู ไม่ได้ตัดสินจากคำให้การอย่างเดียว',
+    'Ploy ฝ่าย Sales กำลังรอสรุปยอดก่อนประชุมสาขาอยู่ ผมส่งงาน T-102 เข้าคิวให้แล้ว คราวนี้ลองใช้ข้อมูลช่วยทีมวางแผนกัน',
+  ] },
 };

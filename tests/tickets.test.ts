@@ -1,6 +1,6 @@
 // Every ticket must be solvable by its own model answer, and must not pass untouched.
 import { afterAll, describe, expect, it } from 'vitest';
-import { checkResult, judge, resetWorkspace } from '../src/lib/judge';
+import { checkResult, inspectResult, judge, resetWorkspace } from '../src/lib/judge';
 import { closeDb, execSql, inTransaction, lastRows } from '../src/lib/pg';
 import { TICKETS } from '../src/tickets';
 import { makeDaily } from '../src/tickets/daily';
@@ -53,6 +53,35 @@ describe('daily ticket', () => {
 });
 
 describe('judge', () => {
+  it('explains shape, count, ordering and value errors without revealing reference data', async () => {
+    const check = { kind: 'result' as const, expect: 'SELECT * FROM (VALUES (1, 10), (2, 20)) AS v(id, amount) ORDER BY id', ordered: true };
+    const cases = [
+      { columns: ['id'], values: [[1], [2]], message: 'จำนวนคอลัมน์' },
+      { columns: ['id', 'amount'], values: [[1, 10]], message: 'ยังขาด' },
+      { columns: ['id', 'amount'], values: [[1, 10], [2, 20], [2, 20]], message: 'ยังเกิน' },
+      { columns: ['id', 'amount'], values: [[2, 20], [1, 10]], message: 'ลำดับแถว' },
+      { columns: ['id', 'amount'], values: [[1, 10], [1, 10]], message: 'ค่ายังไม่ตรง' },
+    ];
+    for (const { message, ...rows } of cases) {
+      const report = await inspectResult(check, rows);
+      expect(report.pass).toBe(false);
+      expect(report.lines[0].name).toContain(message);
+      expect(JSON.stringify(report)).not.toContain(check.expect);
+    }
+    expect((await inspectResult({ ...check, ordered: false }, { columns: ['a', 'b'], values: [[2, 20], [1, 10]] })).pass).toBe(true);
+    expect((await inspectResult(check, { columns: ['a', 'b'], values: [['1', '10.0'], [2, 20]] })).pass).toBe(true);
+  });
+
+  it('uses tailored feedback for open-ended tasks and reports reference failures honestly', async () => {
+    const check = TICKETS[0].tasks[0].check;
+    const report = await inspectResult(check as Extract<typeof check, { kind: 'result' }>, EMPTY);
+    expect(report.pass).toBe(false);
+    expect(report.lines[0].detail).toContain('suspects');
+    const broken = await inspectResult({ kind: 'result', expect: 'SELECT 1/0' }, EMPTY);
+    expect(broken.pass).toBe(false);
+    expect(broken.lines[0].name).toBe('ยังตรวจคำตอบไม่ได้');
+  });
+
   it('rejects a script that forgets COMMIT', async () => {
     const t06 = TICKETS.find((t) => t.id === 't06')!;
     const sol = t06.tasks[0].solution as Record<string, string>;
