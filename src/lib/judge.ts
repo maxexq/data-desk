@@ -1,7 +1,7 @@
 // The judge: sets up a ticket's workspace and decides whether a task is done.
 // No DOM here, so the same code runs in the browser and in the test-suite.
 import type { Check, Test, Ticket } from '../tickets/types';
-import { execSql, explainError, inTransaction, lastRows, type Cell, type Rows } from './pg';
+import { execSql, explainError, inTransaction, lastRows, measurePages, type Cell, type PageStats, type Rows } from './pg';
 
 export interface ReportLine {
   name: string;
@@ -58,12 +58,14 @@ export function sameRows(a: Cell[][], b: Cell[][], ordered = false): boolean {
 }
 
 /** Result checks run on every query. `rows` is the player's last result (possibly empty). */
-export async function checkResult(check: Extract<Check, { kind: 'result' }>, rows: Rows): Promise<boolean> {
-  return (await inspectResult(check, rows)).pass;
+export async function checkResult(check: Extract<Check, { kind: 'result' }>, rows: Rows, sql?: string): Promise<boolean> {
+  const stats = sql && 'maxPages' in check && check.maxPages ? await measurePages(sql) : undefined;
+  return (await inspectResult(check, rows, stats)).pass;
 }
 
 /** Diagnose the result without revealing the reference rows or SQL. */
-export async function inspectResult(check: Extract<Check, { kind: 'result' }>, rows: Rows): Promise<Report> {
+/** `stats` is the page meter for the player's query: undefined = not measured, null = could not be measured. */
+export async function inspectResult(check: Extract<Check, { kind: 'result' }>, rows: Rows, stats?: PageStats | null): Promise<Report> {
   const report = (pass: boolean, name: string, detail?: string): Report => ({
     pass, expandable: true, lines: [{ ok: pass, name, detail }],
   });
@@ -76,7 +78,15 @@ export async function inspectResult(check: Extract<Check, { kind: 'result' }>, r
   if (!want) return report(false, 'ยังตรวจคำตอบไม่ได้');
   if (rows.columns.length !== want.columns.length)
     return report(false, 'จำนวนคอลัมน์ยังไม่ตรง', `ได้ ${rows.columns.length} คอลัมน์ โจทย์ต้องการ ${want.columns.length} คอลัมน์ ลองตรวจรายการใน SELECT และลำดับคอลัมน์`);
-  if (sameRows(rows.values, want.values, check.ordered)) return report(true, 'ผลลัพธ์ตรงตามโจทย์แล้ว');
+  if (sameRows(rows.values, want.values, check.ordered)) {
+    if (!check.maxPages) return report(true, 'ผลลัพธ์ตรงตามโจทย์แล้ว');
+    if (!stats)
+      return report(false, 'ผลลัพธ์ถูกแล้ว แต่ยังวัดจำนวน page ไม่ได้', 'ขั้นนี้มีงบจำนวน page ด้วย รันเป็นคำสั่ง SELECT เดียว (ไม่มี ; คั่นหลายคำสั่ง) เพื่อให้เกมวัดได้');
+    const plan = stats.nodes.join(' → ');
+    if (stats.pages > check.maxPages)
+      return report(false, `ผลลัพธ์ถูกแล้ว แต่อ่านไป ${stats.pages.toLocaleString()} page เกินงบ ${check.maxPages} page`, `แผนที่ฐานข้อมูลใช้: ${plan} ลองหาวิธีให้มันไม่ต้องไล่อ่านข้อมูลที่ไม่ได้ใช้`);
+    return report(true, `ผลลัพธ์ถูก และอ่านแค่ ${stats.pages} page (งบ ${check.maxPages})`, `แผนที่ใช้: ${plan}`);
+  }
   if (rows.values.length !== want.values.length)
     return report(false, rows.values.length > want.values.length ? 'จำนวนแถวยังเกินจากที่โจทย์ต้องการ' : 'จำนวนแถวยังขาดจากที่โจทย์ต้องการ',
       `ได้ ${rows.values.length} แถว โจทย์ต้องการ ${want.values.length} แถว ลองตรวจ WHERE, JOIN และการจัดกลุ่ม รวมถึงแถวซ้ำ`);

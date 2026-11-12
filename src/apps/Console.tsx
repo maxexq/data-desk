@@ -1,6 +1,7 @@
 import { Suspense, lazy, memo, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { resultKey, schemaOf, useGame, type RunView } from '../state/game';
+import { getTicket } from '../tickets';
 import { Grid } from '../ui/Grid';
 import { Icon } from '../ui/icons';
 import { openApp } from '../ui/open';
@@ -50,6 +51,22 @@ export function statusOf(r: RunView | undefined): string {
   return 'Error';
 }
 
+/** Pages read by the last query, like SQL Server's SET STATISTICS IO: the number that tells a fast query from a slow one. */
+function PageMeter({ result, budget }: { result: RunView | undefined; budget?: number }) {
+  const stats = result?.kind === 'rows' ? result.pages : undefined;
+  const over = budget !== undefined && stats ? stats.pages > budget : false;
+  const text = stats ? `${stats.pages.toLocaleString()} page${stats.pages === 1 ? '' : 's'}` : '— pages';
+  const title = stats
+    ? `อ่านข้อมูล ${stats.pages} page (page ละ 8 KB) · แผน: ${stats.nodes.join(' → ')}`
+    : 'จำนวน page ที่ query อ่าน วัดได้เมื่อรัน SELECT คำสั่งเดียว';
+  return (
+    <span className={`sunken cell mono pages${over ? ' bad' : ''}`} data-testid="pages" title={title}>
+      {text}
+      {budget !== undefined && <span className="dim">{`\u00a0/ งบ ${budget}`}</span>}
+    </span>
+  );
+}
+
 export const Console = memo(function Console() {
   const ticketId = useGame((s) => s.active);
   const tabs = useGame(useShallow((s) => (s.active ? (s.tabsets[s.active]?.tabs ?? []).map((t) => `${t.id}\u0000${t.title}\u0000${t.file ? 1 : 0}`) : [])));
@@ -57,6 +74,14 @@ export const Console = memo(function Console() {
   const result = useGame((s) => (s.active && active ? s.results[resultKey(s.active, active)] : undefined));
   const running = useGame((s) => s.running);
   const ready = useGame((s) => s.ready);
+  // The current step's page budget, if it has one.
+  const budget = useGame((s) => {
+    if (!s.active) return undefined;
+    const t = getTicket(s.active);
+    const p = s.progress[s.active];
+    const check = t?.tasks[p?.task ?? 0]?.check;
+    return check && check.kind === 'result' && 'maxPages' in check && !p?.done ? check.maxPages : undefined;
+  });
   const inTxn = useGame((s) => s.inTxn);
   const history = useGame((s) => s.history);
   const tables = useGame((s) => s.tables);
@@ -158,6 +183,7 @@ export const Console = memo(function Console() {
               TXN OPEN
             </span>
           )}
+          <PageMeter result={result} budget={budget} />
           <span className="sunken cell mono">PostgreSQL 18</span>
         </div>
       </div>

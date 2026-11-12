@@ -35,13 +35,23 @@ export async function openTicket(page: Page, id: string) {
 }
 
 /** Replace the editor's content. insertText avoids the editor's auto-closing of quotes and brackets. */
+/** Close the autocomplete list (it opens a moment after typing and can cover the editor or the toolbar). */
+async function closeCompletions(page: Page) {
+  if (await page.locator('.cm-tooltip-autocomplete').count()) {
+    await page.locator('.cm-content').focus();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.cm-tooltip-autocomplete')).toHaveCount(0);
+  }
+}
+
 export async function setEditor(page: Page, sql: string) {
-  // An autocomplete list left open by the previous query would sit on top of the editor.
-  if (await page.locator('.cm-tooltip-autocomplete').count()) await page.keyboard.press('Escape');
+  await closeCompletions(page);
   await page.locator('.cm-content').click();
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.press('Delete');
   await page.keyboard.insertText(sql);
+  await page.waitForTimeout(50); // let a completion list open now, so it is closed here and not later
+  await closeCompletions(page);
 }
 
 export async function run(page: Page, sql: string) {
@@ -53,7 +63,8 @@ export async function run(page: Page, sql: string) {
 export async function submit(page: Page) {
   await page.getByTestId('submit').click();
   await expect(page.getByTestId('report')).toBeVisible();
-  await expect(page.getByTestId('submit').or(page.getByTestId('closed'))).toBeVisible();
+  // Settled: either still on a submit step, or moved on (a result step has no Submit), or closed.
+  await expect(page.getByTestId('submit').or(page.getByTestId('closed')).or(page.getByTestId('run'))).not.toHaveCount(0);
 }
 
 const doneTasks = (page: Page) => page.locator('[data-task-state="done"]');
@@ -61,6 +72,8 @@ const doneTasks = (page: Page) => page.locator('[data-task-state="done"]');
 /** Play a whole ticket with its model answers and expect it to close. */
 export async function playTicket(page: Page, ticket: Ticket) {
   for (const [i, task] of ticket.tasks.entries()) {
+    // e.g. CREATE INDEX then VACUUM: each must run as its own statement
+    for (const stmt of task.setup ?? []) await run(page, stmt);
     if (typeof task.solution === 'string') {
       await run(page, task.solution);
     } else {
