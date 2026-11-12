@@ -10,7 +10,13 @@ export interface Test {
 
 export type Check =
   /** Checked automatically on every Run against the query's result. */
-  | { kind: 'result'; expect: string; ordered?: boolean }
+  | {
+      kind: 'result';
+      expect: string;
+      ordered?: boolean;
+      /** The player's query must also read at most this many 8 KB pages (EXPLAIN ANALYZE, BUFFERS). */
+      maxPages?: number;
+    }
   | { kind: 'result'; test: (r: Rows) => boolean; feedback?: string }
   /** Submit: tests run against the player's live workspace. */
   | { kind: 'state'; tests: Test[]; noOpenTxn?: boolean; rollbackFirst?: boolean }
@@ -33,6 +39,8 @@ export interface Task {
   check: Check;
   /** A model answer: one statement/script, or one script per file. Used by the test-suite and shown after closing. */
   solution: string | Record<string, string>;
+  /** Statements the model answer runs first, each on its own (e.g. CREATE INDEX, then VACUUM, which cannot share a transaction). */
+  setup?: string[];
 }
 
 export type TicketKind = 'investigate' | 'request' | 'incident' | 'review' | 'project' | 'daily';

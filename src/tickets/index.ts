@@ -9,6 +9,7 @@ import { t07 } from './t07-slow-history';
 import type { Ticket } from './types';
 import { cohorts, gaps, latest } from './analytics';
 import { averages, dates, fanout, filtering, missing, sorting } from './foundations';
+import { covering, keyset, sargable, uuids } from './performance';
 
 export interface Chapter {
   id: string;
@@ -25,6 +26,7 @@ export const CHAPTERS: Chapter[] = [
   { id: 'analytics', title: 'ทีมข้อมูล: อ่านแนวโน้ม', description: 'ดูข้อมูลตามเวลา เติมช่องว่าง และวัดว่าลูกค้ากลับมาไหม', skills: 'ROW_NUMBER · LAG · Running total · generate_series · Moving average · Cohort / Retention', tickets: [latest, gaps, cohorts] },
   { id: 'recovery', title: 'รับมือข้อมูลผิดพลาด', description: 'กู้สถานการณ์และแก้ข้อมูลอย่างปลอดภัย', skills: 'UPDATE · BEGIN / COMMIT · ROLLBACK', tickets: [t04] },
   { id: 'database', title: 'ออกแบบและดูแลฐานข้อมูล', description: 'จัดระเบียบข้อมูล เปลี่ยนโครงสร้าง และแก้ปัญหาความช้า', skills: 'Schema design · Migration · EXPLAIN · Index', tickets: [t05, t06, t07] },
+  { id: 'speed', title: 'ทำให้เร็ว', description: 'ดูว่า query อ่านข้อมูลกี่ page แล้วทำให้อ่านเท่าที่จำเป็น', skills: 'Page meter · Keyset pagination · Sargable WHERE · Expression index · Covering index · UUIDv7', tickets: [keyset, sargable, covering, uuids] },
 ];
 
 export const TICKETS: Ticket[] = CHAPTERS.flatMap((chapter) => chapter.tickets);

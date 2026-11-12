@@ -17,6 +17,12 @@ const SOURCES = {
   constraints: { label: 'PostgreSQL — Constraints', url: `${PG}ddl-constraints.html` },
   alter: { label: 'PostgreSQL — ALTER TABLE', url: `${PG}sql-altertable.html` },
   explain: { label: 'PostgreSQL — Using EXPLAIN', url: `${PG}using-explain.html` },
+  explainCmd: { label: 'PostgreSQL — EXPLAIN (ตัวเลือก BUFFERS)', url: `${PG}sql-explain.html` },
+  pageLayout: { label: 'PostgreSQL — Database Page Layout', url: `${PG}storage-page-layout.html` },
+  indexOnly: { label: 'PostgreSQL — Index-Only Scans and Covering Indexes', url: `${PG}indexes-index-only-scans.html` },
+  exprIndex: { label: 'PostgreSQL — Indexes on Expressions', url: `${PG}indexes-expressional.html` },
+  uuid: { label: 'PostgreSQL — UUID Functions (uuidv7)', url: `${PG}functions-uuid.html` },
+  noOffset: { label: 'Markus Winand — We need tool support for keyset pagination (Use The Index, Luke)', url: 'https://use-the-index-luke.com/no-offset' },
   strong: { label: 'Strong Migrations — README (ankane/strong_migrations)', url: 'https://www.rubydoc.info/gems/strong_migrations/2.0.1' },
   holywell: { label: 'SQL Style Guide โดย Simon Holywell (CC BY-SA 4.0)', url: 'https://www.sqlstyle.guide/' },
   mozilla: { label: 'Mozilla Data Docs — SQL Style Guide', url: 'https://docs.telemetry.mozilla.org/concepts/sql_style' },
@@ -382,8 +388,48 @@ LIMIT
     sources: ['explain', 'strong', 'constraints'],
   },
   {
-    tab: '12 · Style',
-    title: 'บทที่ 12: เขียนให้คนอ่านออก',
+    tab: '12 · Pages',
+    title: 'บทที่ 12: Page — วัดว่า query อ่านเยอะแค่ไหน',
+    lead: 'ฐานข้อมูลไม่ได้อ่านทีละแถว มันอ่านทีละ page ขนาด 8 KB จำนวน page ที่อ่านจึงเป็นตัวเลขที่บอกว่า query ทำงานหนักแค่ไหน ช่อง pages ใต้ SQL Console แสดงตัวเลขนี้ทุกครั้งที่รัน SELECT',
+    points: [
+      <>
+        ตารางและ index ถูกเก็บเป็น page ละ 8 KB แถวยิ่งกว้าง 1 page ยิ่งเก็บได้น้อยแถว ตัวเลขในเกมมาจาก <C>EXPLAIN (ANALYZE, BUFFERS)</C>{' '}
+        คือจำนวน page ที่แตะทั้งที่อยู่ใน memory แล้ว (hit) และที่ต้องอ่านเพิ่ม (read)
+      </>,
+      <>
+        <C>OFFSET 40000</C> ไม่ได้กระโดด ฐานข้อมูลต้องอ่านแล้วทิ้ง 40,000 แถวก่อน หน้าลึกจึงช้า ทางแก้คือ keyset pagination: จำค่าของแถวสุดท้าย แล้ว{' '}
+        <C>{'WHERE (created_at, id) < (…)'}</C> ให้ index พาไปตรงนั้น และต้องมีคอลัมน์ที่ไม่ซ้ำ (เช่น id) เป็นตัวตัดสินท้ายสุด
+      </>,
+      <>
+        index เก็บค่าของคอลัมน์ตามที่เป็น ถ้าเขียน <C>created_at::date = …</C> หรือ <C>lower(email) = …</C> ฐานข้อมูลต้องคำนวณทุกแถวก่อน ให้เขียนเป็นช่วง{' '}
+        <C>{'created_at >= … AND created_at < …'}</C> หรือสร้าง index บน expression นั้นตรงๆ
+      </>,
+      <>
+        index ปกติบอกแค่ว่าแถวอยู่ไหน แล้วต้องไปเปิด page ของตารางทีละแถว ถ้าใส่คอลัมน์ที่ query ใช้ไว้ใน index ด้วย <C>INCLUDE (…)</C> จะได้{' '}
+        <C>Index Only Scan</C> ซึ่งต้องมี visibility map ที่ <C>VACUUM</C> อัปเดตไว้
+      </>,
+      <>
+        UUID สุ่ม (<C>gen_random_uuid()</C>) ทำให้แถวใหม่ไปแทรกกลาง index แบบสุ่มจน page แตกบ่อย <C>uuidv7()</C> (PostgreSQL 18)
+        ขึ้นต้นด้วยเวลา แถวใหม่จึงต่อท้าย index เหมือนเลขเรียง
+      </>,
+      <>index ทุกตัวมีราคา: ใช้พื้นที่ และทำให้ INSERT / UPDATE ช้าลง สร้างเฉพาะที่มี query ใช้จริง แล้ววัดผลด้วยตัวเลข pages ก่อนและหลัง</>,
+    ],
+    code: `-- ช้าขึ้นเรื่อยๆ ตามความลึกของหน้า
+SELECT id, created_at, title FROM posts
+ORDER BY created_at DESC, id DESC
+OFFSET 40000 LIMIT 20;
+
+-- เร็วเท่ากันทุกหน้า (ใช้ค่าของแถวสุดท้ายในหน้าที่แล้ว)
+SELECT id, created_at, title FROM posts
+WHERE (created_at, id) < ('2026-01-01 01:51:07', 20002)
+ORDER BY created_at DESC, id DESC
+LIMIT 20;`,
+    note: 'ลองรันทั้งสองแบบใน T-108 แล้วเทียบตัวเลขในช่อง pages',
+    sources: ['pageLayout', 'explainCmd', 'noOffset', 'exprIndex', 'indexOnly', 'uuid'],
+  },
+  {
+    tab: '13 · Style',
+    title: 'บทที่ 13: เขียนให้คนอ่านออก',
     lead: 'ฐานข้อมูลไม่สนว่าเราจัดบรรทัดยังไง แต่คนที่อ่าน query ต่อ (รวมถึงตัวเราในอีกสัปดาห์) สน',
     points: [
       <>

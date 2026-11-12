@@ -63,7 +63,8 @@ export async function run(page: Page, sql: string) {
 export async function submit(page: Page) {
   await page.getByTestId('submit').click();
   await expect(page.getByTestId('report')).toBeVisible();
-  await expect(page.getByTestId('submit').or(page.getByTestId('closed'))).toBeVisible();
+  // Settled: either still on a submit step, or moved on (a result step has no Submit), or closed.
+  await expect(page.getByTestId('submit').or(page.getByTestId('closed')).or(page.getByTestId('run'))).not.toHaveCount(0);
 }
 
 const doneTasks = (page: Page) => page.locator('[data-task-state="done"]');
@@ -71,6 +72,8 @@ const doneTasks = (page: Page) => page.locator('[data-task-state="done"]');
 /** Play a whole ticket with its model answers and expect it to close. */
 export async function playTicket(page: Page, ticket: Ticket) {
   for (const [i, task] of ticket.tasks.entries()) {
+    // e.g. CREATE INDEX then VACUUM: each must run as its own statement
+    for (const stmt of task.setup ?? []) await run(page, stmt);
     if (typeof task.solution === 'string') {
       await run(page, task.solution);
     } else {

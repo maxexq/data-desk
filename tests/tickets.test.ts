@@ -15,12 +15,18 @@ async function playThrough(ticket: Ticket) {
     const files = typeof task.solution === 'string' ? {} : task.solution;
     const initial = Object.fromEntries((ticket.files ?? []).map((f) => [f.name, f.initial]));
 
+    for (const stmt of task.setup ?? []) {
+      const out = await execSql(stmt);
+      expect(out.ok, `${label}: setup fails: ${out.ok ? '' : out.error.message}`).toBe(true);
+    }
     if (task.check.kind === 'result') {
       expect(await checkResult(task.check, EMPTY), `${label}: passes with an empty result`).toBe(false);
-      const out = await execSql(task.solution as string);
+      const sql = task.solution as string;
+      const out = await execSql(sql);
       expect(out.ok, `${label}: solution fails: ${out.ok ? '' : out.error.message}`).toBe(true);
       const rows = out.ok ? lastRows(out.results) : undefined;
-      expect(await checkResult(task.check, rows ?? EMPTY), `${label}: solution rejected`).toBe(true);
+      // The query is passed along so a page budget (maxPages) is measured too.
+      expect(await checkResult(task.check, rows ?? EMPTY, sql), `${label}: solution rejected`).toBe(true);
     } else {
       const before = await judge(ticket, task.check, initial);
       expect(before.pass, `${label}: passes before any work`).toBe(false);
@@ -88,6 +94,18 @@ describe('foundation mistakes', () => {
     // counting orders instead of people
     ['f09', 1, "WITH f AS (SELECT customer_id, date_trunc('month', MIN(ordered_on)) AS c FROM orders GROUP BY customer_id) SELECT to_char(f.c, 'YYYY-MM'), COUNT(DISTINCT f.customer_id), COUNT(o.id), ROUND(100.0 * COUNT(o.id) / COUNT(DISTINCT f.customer_id), 1) FROM f LEFT JOIN orders o ON o.customer_id = f.customer_id AND date_trunc('month', o.ordered_on) = f.c + INTERVAL '1 month' GROUP BY f.c ORDER BY f.c"],
     ['f09', 2, "WITH f AS (SELECT customer_id, date_trunc('month', MIN(ordered_on)) AS c FROM orders GROUP BY customer_id) SELECT to_char(f.c, 'YYYY-MM'), EXTRACT(MONTH FROM o.ordered_on) - EXTRACT(MONTH FROM f.c), COUNT(*) FROM f JOIN orders o ON o.customer_id = f.customer_id GROUP BY 1, 2 ORDER BY 1, 2"],
+    // right rows, but OFFSET walks 39,999 rows first: over the page budget
+    ['p01', 1, 'SELECT id, created_at, title FROM posts ORDER BY created_at DESC, id DESC OFFSET 39999 LIMIT 20'],
+    // created_at alone skips posts from the same second
+    ['p01', 1, "SELECT id, created_at, title FROM posts WHERE created_at < '2026-01-01 01:51:07' ORDER BY created_at DESC, id DESC LIMIT 20"],
+    ['p01', 2, "SELECT id, created_at, title FROM posts WHERE (created_at, id) > ('2026-01-01 01:51:07', 20002) ORDER BY created_at, id LIMIT 20"],
+    // a function around the column cannot use the index: right result, whole table read
+    ['p02', 0, "SELECT count(*), sum(total_baht) FROM orders WHERE created_at::date = '2026-03-15'"],
+    ['p02', 2, "SELECT id FROM orders WHERE customer_email = 'user42@mango.co' ORDER BY id"],
+    // no expression index yet: right rows, whole table read
+    ['p02', 2, "SELECT id FROM orders WHERE lower(customer_email) = 'user42@mango.co' ORDER BY id"],
+    // the plain index still visits a heap page per row
+    ['p03', 1, 'SELECT status, sum(total_baht) FROM sales WHERE customer_id = 42 GROUP BY status ORDER BY status'],
     ['f06', 0, 'SELECT o.branch, SUM(i.price_baht) FROM orders o JOIN order_items i ON i.order_id = o.id GROUP BY o.branch ORDER BY o.branch'],
     // joining two child tables at once multiplies rows
     ['f06', 1, 'SELECT o.branch, SUM(i.qty * i.price_baht), SUM(p.amount_baht) FROM orders o JOIN order_items i ON i.order_id = o.id JOIN payments p ON p.order_id = o.id GROUP BY o.branch ORDER BY o.branch'],
@@ -102,7 +120,7 @@ describe('foundation mistakes', () => {
       expect(out.ok).toBe(true);
       const check = ticket.tasks[step].check;
       if (check.kind !== 'result') throw new Error('Expected a result check');
-      expect(await checkResult(check, out.ok ? lastRows(out.results)! : EMPTY)).toBe(false);
+      expect(await checkResult(check, out.ok ? lastRows(out.results)! : EMPTY, sql)).toBe(false);
     });
   }
 });

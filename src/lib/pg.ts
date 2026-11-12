@@ -146,3 +146,54 @@ export function explainError(e: PgError): string {
       return e.message;
   }
 }
+
+/* ---------- page meter ---------- */
+
+export interface PageStats {
+  /** 8 KB pages the query touched (shared + local buffers, hit or read): PostgreSQL's "logical reads". */
+  pages: number;
+  /** Plan nodes from the top down, e.g. ["Limit", "Index Scan on posts"]. */
+  nodes: string[];
+}
+
+/**
+ * Only a single read-only statement is measured: EXPLAIN ANALYZE runs the query a second time,
+ * which must not change anything (no writes, no sequences, no SELECT INTO).
+ */
+export function explainable(sql: string): boolean {
+  const s = sql
+    .replace(/--[^\n]*/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .trim()
+    .replace(/;\s*$/, '');
+  if (!s || s.includes(';')) return false;
+  if (!/^(select|with|values|table)\b/i.test(s)) return false;
+  return !/\b(insert|update|delete|merge|into|nextval|setval|lock|for\s+update|for\s+share)\b/i.test(s);
+}
+
+type PlanNode = Record<string, unknown> & { Plans?: PlanNode[] };
+
+const blocks = (n: PlanNode) =>
+  ['Shared Hit Blocks', 'Shared Read Blocks', 'Local Hit Blocks', 'Local Read Blocks'].reduce((sum, k) => sum + (Number(n[k]) || 0), 0);
+
+/** How many pages a query reads, measured with EXPLAIN (ANALYZE, BUFFERS). Null when it cannot be measured. */
+export async function measurePages(sql: string, exec: Exec = execSql): Promise<PageStats | null> {
+  if (!explainable(sql)) return null;
+  const r = await exec(`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql.trim().replace(/;\s*$/, '')}`);
+  if (!r.ok) return null;
+  const cell = r.results[r.results.length - 1]?.values[0]?.[0];
+  try {
+    const plan = (typeof cell === 'string' ? JSON.parse(cell) : cell) as { Plan: PlanNode }[];
+    const top = plan[0].Plan;
+    const nodes: string[] = [];
+    const walk = (n: PlanNode) => {
+      nodes.push(n['Relation Name'] ? `${n['Node Type']} on ${n['Relation Name']}` : String(n['Node Type']));
+      n.Plans?.forEach(walk);
+    };
+    walk(top);
+    // Buffers on the top node already include its children.
+    return { pages: blocks(top), nodes };
+  } catch {
+    return null;
+  }
+}

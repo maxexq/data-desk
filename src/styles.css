@@ -2089,3 +2089,15 @@ select.field {
     height: 64px;
   }
 }
+
+/* page meter in the console status bar */
+.statusbar .pages {
+  white-space: nowrap;
+}
+.statusbar .pages.bad {
+  color: #fff;
+  background: var(--danger);
+}
+.statusbar .pages.bad .dim {
+  color: #ffe3e3;
+}

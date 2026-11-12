@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { STORAGE_KEY } from '../config';
 import { inspectResult, describeWorkspace, judge, resetWorkspace, type Report, type TableInfo } from '../lib/judge';
-import { execSql, explainError, inTransaction, lastRows, type Cell, type ExecOutcome } from '../lib/pg';
+import { execSql, explainError, inTransaction, lastRows, measurePages, type Cell, type ExecOutcome, type PageStats } from '../lib/pg';
 import { TICKETS, getTicket } from '../tickets';
 import { todayKey } from '../tickets/daily';
 import type { Ticket } from '../tickets/types';
@@ -29,7 +29,7 @@ export interface Progress {
 }
 
 export type RunView =
-  | { kind: 'rows'; columns: string[]; values: Cell[][]; total: number; ms: number }
+  | { kind: 'rows'; columns: string[]; values: Cell[][]; total: number; ms: number; pages?: PageStats | null }
   | { kind: 'ok'; statements: number; affected: number; ms: number }
   | { kind: 'error'; raw: string; friendly: string; hint?: string };
 
@@ -215,6 +215,8 @@ export const useGame = create<GameState>()(
           set({ running: true, report: null });
           const out = await execSql(sql);
           const view = toView(out);
+          // The page meter: how many 8 KB pages this query read (only for a single read-only statement).
+          if (view.kind === 'rows') view.pages = await measurePages(sql);
           const rows = (out.ok && lastRows(out.results)) || { columns: [] as string[], values: [] as Cell[][] };
           const p = get().progress[t.id] ?? NO_PROGRESS;
           patchProgress(t.id, { queries: p.queries + 1 });
@@ -225,7 +227,7 @@ export const useGame = create<GameState>()(
           }));
           const task = t.tasks[p.task];
           if (out.ok && !p.done && task?.check.kind === 'result') {
-            const report = await inspectResult(task.check, rows);
+            const report = await inspectResult(task.check, rows, view.kind === 'rows' ? view.pages : null);
             set({ report: { ...report, taskLabel: `ขั้นที่ ${p.task + 1}: ${task.goal}` } });
             if (report.pass) advance(t);
           }

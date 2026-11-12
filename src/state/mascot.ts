@@ -103,6 +103,15 @@ useGame.subscribe((s, prev) => {
   }
   errors = 0;
   const sql = s.tabsets[id]?.tabs.find((t) => t.id === tab)?.sql ?? '';
+  const offset = Number(/\boffset\s+(\d+)/i.exec(sql)?.[1] ?? 0);
+  const deep = `${id}/${p?.task ?? 0}/offset`;
+  if (offset >= 1000 && !warned.has(deep)) {
+    warned.add(deep);
+    return speak(
+      `OFFSET ${offset.toLocaleString()} ไม่ได้กระโดดนะ ฐานข้อมูลต้องอ่านแล้วทิ้ง ${offset.toLocaleString()} แถวก่อนทุกครั้ง ดูตัวเลขในช่อง pages สิ ลองจำค่าของแถวสุดท้ายแล้วใช้ WHERE ให้ index พาไปแทน (keyset pagination)`,
+      'worried',
+    );
+  }
   const bad = idEqualsId(sql);
   const where = `${id}/${p?.task ?? 0}`;
   if (bad && !warned.has(where)) {
