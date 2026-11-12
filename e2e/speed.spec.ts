@@ -9,7 +9,7 @@ test('the page meter fails a right answer that reads too much, and passes the fa
   await openTicket(desk, 'p01');
   await run(desk, 'SELECT id, created_at, title FROM posts ORDER BY created_at DESC, id DESC LIMIT 20');
   await expect(desk.locator('[data-task-state="done"]')).toHaveCount(1);
-  await expect(desk.getByTestId('pages')).toHaveText(/^\d+ pages? \/ งบ 20$/);
+  await expect(desk.getByTestId('pages')).toHaveText(/^\d+ pages?\s\/ งบ 20$/);
 
   await run(desk, OFFSET);
   await expect(desk.getByTestId('pages')).toHaveClass(/bad/);
