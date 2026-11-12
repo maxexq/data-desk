@@ -1,5 +1,21 @@
-# Cloudflare Pages: static site, built by Vite into dist/.
+# Cloudflare Pages: static site built by Vite into dist/, plus Pages Functions in functions/ (the /api routes).
 # Dashboard build settings: build command "npm run build", output directory "dist".
+# Because this file sets bindings, it is the source of truth for them; secrets stay in the dashboard
+# (Settings → Variables and Secrets): GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET.
 name = "data-desk"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-11-01"
+
+# Production (main → data-desk.pages.dev)
+[[d1_databases]]
+binding = "DB"
+database_name = "data-desk"
+database_id = "ba1fdbe7-90c9-4ca4-9339-632a91824e29"
+migrations_dir = "migrations"
+
+# staging and every other preview branch
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "data-desk-staging"
+database_id = "6f4816e8-8162-4a3c-adb3-4c5e9a408097"
+migrations_dir = "migrations"

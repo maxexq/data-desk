@@ -14,7 +14,7 @@ export interface Tab {
   file?: boolean; // a deliverable file of the ticket (not closable, read by the judge)
 }
 
-interface TabSet {
+export interface TabSet {
   tabs: Tab[];
   active: string;
   next: number;

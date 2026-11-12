@@ -20,6 +20,27 @@ npm run preview
 host ต้องอนุญาต WebAssembly และเสิร์ฟไฟล์ `.wasm` กับ `.data` ได้ ถ้า host ไม่ยอมเสิร์ฟ `.data` ให้ build ด้วย
 `DD_DATA_EXT=wasm npm run build` เพื่อส่งไฟล์เดียวกันภายใต้นามสกุลที่ host รับ (ดู `vite.config.ts`)
 
+## เข้าสู่ระบบด้วย Google / GitHub
+
+ไม่บังคับ เล่นได้โดยไม่ต้องเข้าสู่ระบบ (ความคืบหน้าอยู่ใน localStorage) ถ้าเข้าสู่ระบบ ความคืบหน้า โน้ต แท็บ SQL และแอปที่ติดตั้งจะซิงก์ขึ้นเซิร์ฟเวอร์
+
+- **Backend:** Cloudflare Pages Functions ใน `functions/api` (โค้ดจริงอยู่ใน `server/`) และ D1 (`data-desk` สำหรับ production, `data-desk-staging` สำหรับ staging กับ preview) ผูกไว้ใน `wrangler.toml`
+- **Schema:** `migrations/` ใช้กับฐานจริงด้วย `npx wrangler d1 migrations apply data-desk --remote` (และ `data-desk-staging --remote --env preview`)
+- **Flow:** OAuth authorization code + `state` + PKCE (S256) ขอแค่ชื่อกับรูปโปรไฟล์ (Google: `openid profile`, GitHub: ไม่ขอ scope) ไม่เก็บอีเมลและไม่เก็บ access token
+- **Session:** cookie `dd_session` (HttpOnly, Secure, SameSite=Lax, 30 วัน) ฐานข้อมูลเก็บแค่ SHA-256 ของค่า cookie คำสั่งที่เขียนข้อมูลต้องมาจาก origin เดียวกัน
+- **Sync:** `src/state/account.ts` ดึงเซฟจากเซิร์ฟเวอร์มา merge กับในเครื่อง (`src/lib/saveData.ts`: ticket ละความคืบหน้าที่ไกลที่สุด ไม่มีอะไรหาย) แล้วอัปโหลดเมื่อมีการเปลี่ยนแปลง
+- **ถ้าไม่มี backend** (เช่น `npm run dev`) ปุ่ม Log on จะไม่แสดงเลย ส่วน `npx wrangler pages dev dist` รัน backend ในเครื่องได้
+
+ตั้งค่าครั้งแรก (ทำใน dashboard ของแต่ละเจ้า):
+
+| ที่ไหน | ทำอะไร |
+|---|---|
+| Google Cloud Console → APIs & Services → Credentials | สร้าง OAuth client ID แบบ Web application, Authorized redirect URIs: `https://data-desk.pages.dev/api/auth/google/callback` และ `https://staging.data-desk.pages.dev/api/auth/google/callback` แล้วตั้ง OAuth consent screen เป็น In production (scope แค่ openid / profile ไม่ต้องผ่านการรีวิว) |
+| GitHub → Settings → Developer settings → OAuth Apps | สร้าง 2 แอป เพราะแอปหนึ่งมี callback URL ได้อันเดียว: production `https://data-desk.pages.dev/api/auth/github/callback` และ staging `https://staging.data-desk.pages.dev/api/auth/github/callback` |
+| Cloudflare → Pages → data-desk → Settings → Variables and Secrets | ใส่ `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` เป็น Secret แยก Production (แอป production) กับ Preview (แอป staging) แล้ว deploy ใหม่ |
+
+ผู้ให้บริการที่ยังไม่มี key จะไม่ขึ้นปุ่มให้กด
+
 ## ภาพตอนแชร์ลิงก์ (og:image)
 
 `public/og.png` (1200×630) วาดจาก component จริงของเกม (`scripts/og/og.tsx`) แก้แล้วสร้างใหม่ด้วย `node scripts/og/render.mjs`

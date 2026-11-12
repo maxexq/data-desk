@@ -4,6 +4,7 @@ import { APP_NAME } from './config';
 import { getDb } from './lib/pg';
 import { useGame } from './state/game';
 import { useShelf } from './state/shelf';
+import { readLoginResult, useAccount } from './state/account';
 import { useWM } from './state/wm';
 import { DesktopIcons, Taskbar, Toast } from './ui/Desktop';
 import { Mascot } from './ui/Mascot';
@@ -42,6 +43,10 @@ export default function App() {
       () => {
         setBoot('ready');
         openDefaults();
+        // Back from Google / GitHub: say how it went, then see who is signed in (and sync).
+        const message = readLoginResult();
+        if (message) useGame.getState().say(message);
+        void useAccount.getState().check();
       },
       (e) => setBoot(e instanceof Error ? e.message : String(e)),
     );

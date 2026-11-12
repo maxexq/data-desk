@@ -22,6 +22,8 @@
   },
   "include": [
     "src",
+    "server",
+    "functions",
     "vite.config.ts"
   ]
 }

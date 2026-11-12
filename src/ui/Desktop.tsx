@@ -3,6 +3,7 @@ import { APP_NAME } from '../config';
 import { DEPLOY, deployBadge } from '../deploy';
 import { CELL, ORIGIN, cellToPoint, layoutIcons, pointToCell, reorder, rowsFor, type Point } from '../lib/deskLayout';
 import { usePlayer } from '../music/player';
+import { useAccount } from '../state/account';
 import { useDesk } from '../state/desk';
 import { useMascot } from '../state/mascot';
 import { useShelf, useShelfHasNew } from '../state/shelf';
@@ -176,6 +177,9 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
   const order = useWM((s) => s.order);
   const topId = useWM((s) => s.topId);
   useWM((s) => s.wins);
+  const accountStatus = useAccount((s) => s.status);
+  const accountUser = useAccount((s) => s.user);
+  const account = accountStatus === 'signed-in' || accountStatus === 'signed-out' ? { status: accountStatus, user: accountUser } : null;
   const nowPlaying = usePlayer((s) => (s.status === 'stopped' ? null : s.tracks[s.index]?.title));
   const xp = useGame(totalXp);
   const streak = useGame((s) => s.streak.count);
@@ -218,6 +222,12 @@ export const Taskbar = memo(function Taskbar({ apps }: { apps: AppDef[] }) {
         })}
       </div>
       <div className="tray sunken mono">
+        {account && (
+          <button className="tray-account" data-testid="tray-account" title={account.user ? `${account.user.name} · ซิงก์ความคืบหน้าอยู่` : 'เข้าสู่ระบบเพื่อซิงก์ความคืบหน้า'} onClick={() => openApp('account')}>
+            {account.user?.avatarUrl ? <img src={account.user.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <Icon name="key" />}
+            <span>{account.user ? account.user.name : 'Log on'}</span>
+          </button>
+        )}
         {nowPlaying && (
           <button className="tray-music" data-testid="tray-music" title={`กำลังเล่น: ${nowPlaying}`} onClick={() => openApp('music')}>
             <Icon name="music" /> <span>{nowPlaying}</span>
