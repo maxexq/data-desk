@@ -2,6 +2,7 @@ import { TICKETS } from '../tickets';
 import { defs } from '../ui/open';
 import type { AppDef } from '../ui/Win';
 import { Console } from './Console';
+import { AccountWindow } from './Account';
 import { Manual } from './Manual';
 import { Music } from './Music';
 import { AttachmentView, Notepad, Settings } from './misc';
@@ -25,6 +26,7 @@ export function buildApps(onReset: () => void): AppDef[] {
     { id: 'sandbox', title: 'Sandbox', icon: 'sandbox', desktop: 'sandbox', store: true, x: 230, y: 20, w: 760, h: 680, minW: 480, minH: 420, render: () => <Sandbox /> },
     { id: 'snapshot', title: 'Snapshot', icon: 'camera', desktop: 'snapshot', store: true, x: 520, y: 60, w: 640, h: 480, minW: 420, minH: 320, render: () => <Snapshot /> },
     { id: 'erd', title: 'ER Diagram', icon: 'diagram', desktop: 'er diagram', store: true, x: 200, y: 30, w: 900, h: 620, minW: 480, minH: 320, render: () => <ErDiagram /> },
+    { id: 'account', title: 'Log On', icon: 'key', x: 480, y: 140, w: 420, h: 330, minW: 340, minH: 280, render: () => <AccountWindow /> },
     { id: 'settings', title: 'Settings', icon: 'gear', desktop: 'settings', x: 460, y: 180, w: 400, h: 320, render: () => <Settings onReset={onReset} /> },
     { id: 'music', title: 'Desk Tunes', icon: 'music', desktop: 'music', x: 880, y: 60, w: 440, h: 540, minW: 380, minH: 360, render: () => <Music /> },
     { id: 'closed', title: 'Ticket Closed', icon: 'check', x: 330, y: 20, w: 640, h: 700, minW: 420, minH: 320, render: () => <Closed /> },
